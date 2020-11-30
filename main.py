@@ -16,12 +16,6 @@ import random
 #successes, failures = pygame.init()
 #print("{0} successes and {1} failures".format(successes, failures))
 
-display_width = 800
-display_height = 600
-
-pygame.init()
-gameDisplay = pygame.display.set_mode((display_width, display_height))  # Notice the tuple! It's not 2 arguments.
-clock = pygame.time.Clock()
 FPS = 60  # This variable will define how many frames we update per second.
 
 BLACK = (0, 0, 0)
@@ -30,28 +24,37 @@ RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 BLUE = (0, 0, 255)
 
+clock = pygame.time.Clock()
 rect = pygame.Rect((0, 0), (32, 32))  # First tuple is position, second is size.
 image = pygame.Surface((32, 32))  # The tuple represent size.
 image.fill(WHITE)  # We fill our surface with a nice white color (by default black).
         
-def menu(level_list, score_data):
+def menu(level_list, score_data, settings, gameDisplay):
     #score submenu
-    score_menu = pygame_menu.Menu(display_height, display_width, 'Score', theme=pygame_menu.themes.THEME_DARK)
+    score_menu = pygame_menu.Menu(settings["height"], settings["width"], 'Score', theme=pygame_menu.themes.THEME_DARK)
     for data in score_data:
         score_menu.add_label(data)
     score_menu.add_button('Back', pygame_menu.events.BACK)
     
+        #settings submenu
+    settings_menu = pygame_menu.Menu(settings["height"], settings["width"], 'Settings', theme=pygame_menu.themes.THEME_DARK)
+    for data in settings:
+        settings_menu.add_text_input(f"{data} : ", default= settings[data])
+    settings_menu.add_button('Apply', pygame_menu.events.BACK)
+    settings_menu.add_button('Back', pygame_menu.events.BACK)
+    
     #main menu
-    menu = pygame_menu.Menu(display_height, display_width, 'Souls', theme=pygame_menu.themes.THEME_DARK)
+    menu = pygame_menu.Menu(settings["height"], settings["width"], 'Souls', theme=pygame_menu.themes.THEME_DARK)
     menu.add_text_input('Name :', default='John Doe', onchange= set_username,)
     menu.add_selector('Level Selection :', level_list, onchange=set_map)
-    menu.add_button('Play', game)
+    menu.add_button('Play', game, settings, gameDisplay)
     menu.add_button('High Score', score_menu)
+    menu.add_button('Settings', settings_menu)
     menu.add_button('Quit', pygame_menu.events.EXIT)
     menu.mainloop(gameDisplay)
     
-def pause_menu():
-    menu = pygame_menu.Menu(display_height/2, display_width/2, 'Pause', theme=pygame_menu.themes.THEME_BLUE)
+def pause_menu(settings, gameDisplay):
+    menu = pygame_menu.Menu(settings["height"]/2, settings["width"]/2, 'Pause', theme=pygame_menu.themes.THEME_BLUE)
     menu.add_button('Back', pygame_menu.events.CLOSE)
     menu.add_button('Quit', pygame_menu.events.EXIT)
     menu.mainloop(gameDisplay)
@@ -96,16 +99,8 @@ def startup():
         level_list.append(level)
         i = i + 1    
     return level_list
-
-def program_logic():
-    level_list = startup()
-    score_data = decode_score()
-    settings = decode_settings()
-    #global display_width
-    display_width = settings["width"]
-    menu(level_list, score_data)
-    
-def game():
+        
+def game(settings, gameDisplay):
     while True:
         clock.tick(FPS)
         for event in pygame.event.get():
@@ -122,7 +117,7 @@ def game():
                 elif event.key == pygame.K_d:
                     rect.move_ip(2, 0)
                 elif event.key == pygame.K_p:
-                    pause_menu() 
+                    pause_menu(settings, gameDisplay) 
                 elif event.key == pygame.K_n:
                     pygame.display.quit() 
                     pygame.quit()
@@ -130,5 +125,13 @@ def game():
         gameDisplay.fill(BLACK)
         gameDisplay.blit(image, rect)
         pygame.display.update()  # Or pygame.display.flip()
+        
+def program_logic():
+    level_list = startup()
+    score_data = decode_score()
+    settings = decode_settings()
+    pygame.init()
+    gameDisplay = pygame.display.set_mode((settings["width"], settings["height"])) 
+    menu(level_list, score_data, settings, gameDisplay)
 
 program_logic()  
