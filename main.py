@@ -18,6 +18,8 @@ import random
 
 FPS = 60  # This variable will define how many frames we update per second.
 
+current_map = []
+
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 RED = (255, 0, 0)
@@ -36,11 +38,11 @@ def menu(level_list, score_data, settings, gameDisplay):
         score_menu.add_label(data)
     score_menu.add_button('Back', pygame_menu.events.BACK)
     
-        #settings submenu
+    #settings submenu
     settings_menu = pygame_menu.Menu(settings["height"], settings["width"], 'Settings', theme=pygame_menu.themes.THEME_DARK)
     for data in settings:
         settings_menu.add_text_input(f"{data} : ", default= settings[data])
-    settings_menu.add_button('Apply', pygame_menu.events.BACK)
+    #settings_menu.add_button('Apply', apply_settings, selector_id = "id_width")
     settings_menu.add_button('Back', pygame_menu.events.BACK)
     
     #main menu
@@ -52,6 +54,10 @@ def menu(level_list, score_data, settings, gameDisplay):
     menu.add_button('Settings', settings_menu)
     menu.add_button('Quit', pygame_menu.events.EXIT)
     menu.mainloop(gameDisplay)
+        
+def apply_settings(value):
+    print(value)
+    pass
     
 def pause_menu(settings, gameDisplay):
     menu = pygame_menu.Menu(settings["height"]/2, settings["width"]/2, 'Pause', theme=pygame_menu.themes.THEME_BLUE)
@@ -60,24 +66,27 @@ def pause_menu(settings, gameDisplay):
     menu.mainloop(gameDisplay)
     
 def set_map(value, map):
-    print(value)
-    pass
+    filename = f"map/{value[0]}.csv"
+    matrice = decode_csv(filename)
+    for line in matrice:
+        print(line)
 
 def set_username(value):
-    print(value)
     pass
 
 #Decode the csv file
-#def decode_csv(fileName):
-#    with open(fileName, "r") as file:
-#        #take out the first line
-#        first_line = file.readline()
-#        first_line.replace('\n', '').split(",")
-#        for line in file :
-#            data = line.replace('\n', '').split(",")
-#            data = [int(i) for i in data]
-#            initial_matrice.append(data)
-#    file.close
+def decode_csv(fileName):
+    initial_matrice = []
+    with open(fileName, "r") as file:
+        #take out the first line
+        first_line = file.readline()
+        first_line.replace('\n', '').split(",")
+        for line in file :
+            data = line.replace('\n', '').split(",")
+            data = [int(i) for i in data]
+            initial_matrice.append(data)
+    file.close
+    return initial_matrice
     
 def decode_score():
     with open("misc/score.json", "r") as read_file:
@@ -125,7 +134,7 @@ def game(settings, gameDisplay):
         gameDisplay.fill(BLACK)
         gameDisplay.blit(image, rect)
         pygame.display.update()  # Or pygame.display.flip()
-        
+                            
 def program_logic():
     level_list = startup()
     score_data = decode_score()
@@ -134,4 +143,4 @@ def program_logic():
     gameDisplay = pygame.display.set_mode((settings["width"], settings["height"])) 
     menu(level_list, score_data, settings, gameDisplay)
 
-program_logic()  
+program_logic()
