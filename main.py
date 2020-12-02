@@ -19,6 +19,7 @@ import random
 FPS = 60  # This variable will define how many frames we update per second.
 
 current_map = []
+object_map = []
 
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
@@ -142,39 +143,24 @@ def start_playing():
     game = GameMain()
     game.main_loop()
 
-#def map_convertor(matrice):
-#    print(matrice)
-#    row_index = 0
-#    value_index = 0
-#    for row in matrice:
-#        value_index = 0
-#        for value in row:
-#            if value == -1:
-#                matrice[row_index][value_index] = Wall(row_index*50, value_index*50, TreeImg)
-#            value_index = value_index + 1
-#        row_index = row_index + 1
-#    return matrice
-
-
 def map_convertor(matrice):
+    global object_map
+    object_map = []
     row_index = 0
     value_index = 0
     for row in matrice:
         value_index = 0
         for value in row:
-            matrice[row_index][value_index] = Wall(row_index*50, value_index*50, TreeImg)
+            if value == -1:
+                object_map.append(Wall(row_index*50, value_index*50, TreeImg))
             value_index = value_index + 1
         row_index = row_index + 1
-    return matrice
+    return object_map
         
 class Loaded_world(World):
     def __init__(self):
         World.__init__(self)
-        walls = current_map
-        #walls = [Wall(0,0,TreeImg), Wall(256,0,TreeImg),Wall(500,0,TreeImg), Wall((900-256),0,TreeImg), Wall(-160,113,TreeImg),
-        #         Wall(-160,226,TreeImg),Wall(-160,440,TreeImg), Wall(-160, 553,TreeImg),
-        #         Wall((900-150),113,TreeImg),Wall((900-150),226,TreeImg), Water((800-216),443, Water1),Wall(700,0,TreeImg),
-        #         Wall(75,553,TreeImg),Wall(200,553,TreeImg),Wall(330,553,TreeImg)]
+        walls = object_map
         for wall in walls:
             self.wall_list.add(wall)
             
@@ -200,8 +186,25 @@ class GameMain():
         while not self.done:
             self.draw()
             self.clock.tick(60)
-        
-        pygame.quit()
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.display.quit()
+                    pygame.quit()
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_z:
+                        print("z")
+                    elif event.key == pygame.K_s:
+                        print("s")
+                    elif event.key == pygame.K_q:
+                        print("q")
+                    elif event.key == pygame.K_d:
+                        print("d")
+                    elif event.key == pygame.K_p:
+                        pause_menu() 
+                    elif event.key == pygame.K_n:
+                        pygame.display.quit() 
+                        pygame.quit()
+        #pygame.quit()
         
     def draw(self):
 
@@ -209,32 +212,9 @@ class GameMain():
         self.all_sprite_list.draw(self.screen)
         self.current_room.wall_list.draw(self.screen)
         pygame.display.flip()
-                
-def game():
-    while True:
-        clock.tick(FPS)
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.display.quit()
-                pygame.quit()
-            elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_z:
-                    rect.move_ip(0, -2)
-                elif event.key == pygame.K_s:
-                    rect.move_ip(0, 2)
-                elif event.key == pygame.K_q:
-                    rect.move_ip(-2, 0)
-                elif event.key == pygame.K_d:
-                    rect.move_ip(2, 0)
-                elif event.key == pygame.K_p:
-                    pause_menu() 
-                elif event.key == pygame.K_n:
-                    pygame.display.quit() 
-                    pygame.quit()
-    
-        gameDisplay.fill(BLACK)
-        gameDisplay.blit(image, rect)
-        pygame.display.update()  # Or pygame.display.flip()
+        
+   
+
                             
 def program_logic():
     pygame.init()
