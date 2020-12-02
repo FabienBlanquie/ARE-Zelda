@@ -31,6 +31,8 @@ rect = pygame.Rect((0, 0), (32, 32))  # First tuple is position, second is size.
 image = pygame.Surface((32, 32))  # The tuple represent size.
 image.fill(WHITE)  # We fill our surface with a nice white color (by default black).
 
+TreeImg = pygame.image.load("overworld/single_tree.png")
+
 class Settings_object:
       def __init__(self, width, height):
           self.width = width
@@ -93,7 +95,7 @@ def menu():
     menu = pygame_menu.Menu(settings.height, settings.width, 'Souls', theme=pygame_menu.themes.THEME_DARK)
     menu.add_text_input('Name :', default='John Doe', onchange= set_username,)
     menu.add_selector('Level Selection :', level_list, onchange=set_map)
-    menu.add_button('Play', game)
+    menu.add_button('Play', start_playing)
     menu.add_button('High Score', score_menu)
     menu.add_button('Settings', settings_menu)
     menu.add_button('Quit', pygame_menu.events.EXIT)
@@ -110,13 +112,103 @@ def pause_menu():
     menu.mainloop(gameDisplay)
     
 def set_map(value, map):
+    global current_map
+    current_map = []
     filename = f"map/{value[0]}.csv"
     matrice = decode_csv(filename)
     for line in matrice:
-        print(line)
+        current_map.append(line)
 
 def set_username(value):
     pass
+
+class Wall(pygame.sprite.Sprite):
+    def __init__(self,x,y,image):
+        pygame.sprite.Sprite.__init__(self)
+        self.image = image
+        self.rect = self.image.get_rect()
+        self.rect.x = x
+        self.rect.y = y
+        self.destructible = False
+        
+class World(object):
+    wall_list = None
+    def __init__(self):
+        self.wall_list = pygame.sprite.Group()
+        
+def start_playing(): 
+    map_convertor(current_map)
+    Loaded_world()
+    game = GameMain()
+    game.main_loop()
+
+#def map_convertor(matrice):
+#    print(matrice)
+#    row_index = 0
+#    value_index = 0
+#    for row in matrice:
+#        value_index = 0
+#        for value in row:
+#            if value == -1:
+#                matrice[row_index][value_index] = Wall(row_index*50, value_index*50, TreeImg)
+#            value_index = value_index + 1
+#        row_index = row_index + 1
+#    return matrice
+
+
+def map_convertor(matrice):
+    row_index = 0
+    value_index = 0
+    for row in matrice:
+        value_index = 0
+        for value in row:
+            matrice[row_index][value_index] = Wall(row_index*50, value_index*50, TreeImg)
+            value_index = value_index + 1
+        row_index = row_index + 1
+    return matrice
+        
+class Loaded_world(World):
+    def __init__(self):
+        World.__init__(self)
+        walls = current_map
+        #walls = [Wall(0,0,TreeImg), Wall(256,0,TreeImg),Wall(500,0,TreeImg), Wall((900-256),0,TreeImg), Wall(-160,113,TreeImg),
+        #         Wall(-160,226,TreeImg),Wall(-160,440,TreeImg), Wall(-160, 553,TreeImg),
+        #         Wall((900-150),113,TreeImg),Wall((900-150),226,TreeImg), Water((800-216),443, Water1),Wall(700,0,TreeImg),
+        #         Wall(75,553,TreeImg),Wall(200,553,TreeImg),Wall(330,553,TreeImg)]
+        for wall in walls:
+            self.wall_list.add(wall)
+            
+class GameMain():
+    done = False
+   
+    def __init__(self):
+        self.width, self.height = settings.width, settings.height
+        self.color_x = 252
+        self.color_y = 216
+        self.color_z = 168
+        self.all_sprite_list = pygame.sprite.Group()
+        self.clock = pygame.time.Clock()
+        self.current_x = 0
+        self.current_y = 0
+        self.rooms = [[Loaded_world()]]
+        self.current_room = self.rooms[self.current_y][self.current_x]
+        self.screen = pygame.display.set_mode((self.width, self.height))
+        pygame.mixer.pre_init(44100, -16, 2, 2048)
+        pygame.init()
+        
+    def main_loop(self):
+        while not self.done:
+            self.draw()
+            self.clock.tick(60)
+        
+        pygame.quit()
+        
+    def draw(self):
+
+        self.screen.fill((self.color_x, self.color_y, self.color_z))
+        self.all_sprite_list.draw(self.screen)
+        self.current_room.wall_list.draw(self.screen)
+        pygame.display.flip()
                 
 def game():
     while True:
