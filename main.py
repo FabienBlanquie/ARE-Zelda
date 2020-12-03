@@ -190,7 +190,7 @@ def map_convertor(matrice):
         value_index = 0
         for value in row:
             if value == -1:
-                object_map.append(Wall(row_index*50, value_index*50, TreeImg))
+                object_map.append(Wall(row_index*55, value_index*55, TreeImg))
             value_index = value_index + 1
         row_index = row_index + 1
     return object_map
@@ -297,14 +297,6 @@ class Player(pygame.sprite.Sprite):
     def __init__(self, x, y,DIRECTION,upKeyPressed,downKeyPressed,leftKeyPressed,rightKeyPressed, spacePressed,has_sword,has_bombs):
         pygame.sprite.Sprite.__init__(self)
         self.image = pygame.image.load("player/player_up1.png")
-        #self.right1 = pygame.image.load("player/walk_right1.png")
-        #self.right2 = pygame.image.load("player/player_right2.png")
-        #self.left1 = pygame.image.load("player/player_left1.png")
-        #self.left2 = pygame.image.load("player/player_left2.png")
-        #self.up1 = pygame.image.load("player/player_up1.png")
-        #self.up2 = pygame.image.load("player/player_up2.png")
-        #self.down1 = pygame.image.load("player/player_down1.png")
-        #self.down2 = pygame.image.load("player/player_down2.png")
         self.attack_right = pygame.image.load("player/attack_right.png")
         self.attack_left = pygame.image.load("player/attack_left.png")
         self.attack_up = pygame.image.load("player/attack_up.png")
