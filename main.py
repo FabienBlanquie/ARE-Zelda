@@ -248,6 +248,45 @@ class GameMain():
                     self.player.rightKeyPressed = True
                     self.player.leftKeyPressed = False
                     self.player.DIRECTION = self.player.RIGHT
+                
+                elif event.key == pygame.K_SPACE:
+                    self.player.spacePressed = True
+                    self.player.can_move = False
+                    if self.player.DIRECTION == self.player.RIGHT:
+                        self.player.image = self.player.attack_right
+                        oldRect = self.player.rect
+                        self.player.rect = self.player.image.get_rect()
+                        self.player.rect.x = oldRect.x + 15
+                        self.player.rect.y = oldRect.y
+                        self.player.rightKeyPressed = False
+                        self.player.leftKeyPressed = False
+                        self.player.upKeyPressed = False
+                        self.player.downKeyPressed = False
+                    elif self.player.DIRECTION == self.player.LEFT:
+                        self.player.image = self.player.attack_left
+                        self.player.leftKeyPressed = False
+                        self.player.rightKeyPressed = False
+                        self.player.upKeyPressed = False
+                        self.player.downKeyPressed = False
+                        self.player.rect.x -= 30
+                    elif self.player.DIRECTION == self.player.UP:
+                        self.player.image = self.player.attack_up
+                        self.player.rightKeyPressed = False
+                        self.player.leftKeyPressed = False
+                        self.player.downKeyPressed = False
+                        self.player.upKeyPressed = False
+                        self.player.rect.y -= 30
+                    elif self.player.DIRECTION == self.player.DOWN:
+                        self.player.image = self.player.attack_down
+                        oldRect = self.player.rect
+                        self.player.rect = self.player.image.get_rect()
+                        self.player.rect.x = oldRect.x
+                        self.player.rect.y = oldRect.y + 15
+                        self.player.downKeyPressed = False
+                        self.player.upKeyPressed = False
+                        self.player.leftKeyPressed = False
+                        self.player.rightKeyPressed = False
+                    self.player.action = 'attacking'
                         
             elif event.type == pygame.KEYUP:
                 if event.key == pygame.K_z:
@@ -277,6 +316,45 @@ class GameMain():
                         self.player.DIRECTION = self.player.UP
                     elif self.player.downKeyPressed:
                         self.player.DIRECTION = self.player.DOWN
+                        
+                elif event.key == pygame.K_SPACE:
+                    self.player.can_move = True
+                    self.player.spacePressed = False
+                    if self.player.DIRECTION == self.player.RIGHT:
+                        self.player.image = self.player.right_walk[0]
+                        oldRect = self.player.rect
+                        self.player.rect = self.player.image.get_rect()
+                        self.player.rect.x = oldRect.x - 15
+                        self.player.rect.y = oldRect.y
+                        self.player.downKeyPressed = False
+                        self.player.upKeyPressed = False
+                        self.player.leftKeyPressed = False
+                        self.player.rightKeyPressed = False
+                    if self.player.DIRECTION == self.player.LEFT:
+                        self.player.image = self.player.left_walk[0]
+                        self.player.downKeyPressed = False
+                        self.player.upKeyPressed = False
+                        self.player.leftKeyPressed = False
+                        self.player.rightKeyPressed = False
+                        self.player.rect.x += 30
+                    if self.player.DIRECTION == self.player.UP:
+                        self.player.image = self.player.up_walk[0]
+                        self.player.downKeyPressed = False
+                        self.player.upKeyPressed = False
+                        self.player.leftKeyPressed = False
+                        self.player.rightKeyPressed = False
+                        self.player.rect.y += 30
+                    if self.player.DIRECTION == self.player.DOWN:
+                        self.player.image = self.player.down_walk[0]
+                        oldRect = self.player.rect
+                        self.player.rect = self.player.image.get_rect()
+                        self.player.rect.x = oldRect.x 
+                        self.player.rect.y = oldRect.y -15
+                        self.player.downKeyPressed = False
+                        self.player.upKeyPressed = False
+                        self.player.leftKeyPressed = False
+                        self.player.rightKeyPressed = False
+                    self.player.action = "walking"
 
     def main_loop(self):
         while not self.done:
@@ -307,6 +385,7 @@ class Player(pygame.sprite.Sprite):
         self.down_walk = get_plate_walk_down()
         self.ticker = 0
         self.current_frame = 0
+        self.mobs = None
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
@@ -358,7 +437,22 @@ class Player(pygame.sprite.Sprite):
                 self.rect.right = wall.rect.left
         elif self.spacePressed:
             if self.action == "attacking":
-                pass
+                #mob_hit_list = pygame.sprite.spritecollide(self, self.mobs, False)
+                wall_hit_list = pygame.sprite.spritecollide(self, self.walls, False)
+                #for mob in mob_hit_list:
+                #    if self.rect.colliderect(mob):
+                #        if self.DIRECTION == self.UP:
+                #            pass
+                            #mob.hitpoint -= 1
+                #        if self.DIRECTION == self.LEFT:
+                #            pass
+                            #mob.hitpoint -= 1
+                #        if self.DIRECTION == self.RIGHT:
+                #            pass
+                            #mob.hitpoint -= 1
+                #        if self.DIRECTION == self.DOWN:
+                #            pass
+                            #mob.hitpoint -= 1
         self.ticker += 1
         if self.ticker % 8 == 0:
             self.current_frame = (self.current_frame + 1) % 2
