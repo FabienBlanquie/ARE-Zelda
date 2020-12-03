@@ -172,50 +172,168 @@ class GameMain():
         self.color_x = 252
         self.color_y = 216
         self.color_z = 168
+        self.link = Link(200,500,"UP",False,False,False,False,False,False,False)        
         self.all_sprite_list = pygame.sprite.Group()
+        self.all_sprite_list.add(self.link)
         self.clock = pygame.time.Clock()
         self.current_x = 0
         self.current_y = 0
         self.rooms = [[Loaded_world()]]
         self.current_room = self.rooms[self.current_y][self.current_x]
+        self.link.walls = self.rooms[self.current_y][self.current_x].wall_list
         self.screen = pygame.display.set_mode((self.width, self.height))
         pygame.mixer.pre_init(44100, -16, 2, 2048)
         pygame.init()
-        
+                  
+    def handle_events(self):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.display.quit()
+                pygame.quit()
+            elif event.type == pygame.KEYDOWN and self.link.can_move == True:
+                if event.key == pygame.K_ESCAPE:
+                    self.done = True
+                elif event.key == pygame.K_z:
+                    print("z")
+                    self.link.upKeyPressed = True
+                    self.link.downKeyPressed = False
+                    self.link.DIRECTION = self.link.UP
+                elif event.key == pygame.K_s:
+                    self.link.downKeyPressed = True
+                    self.link.upKeyPressed = False
+                    self.link.DIRECTION = self.link.DOWN
+                    self.link.change_y = 5
+                elif event.key == pygame.K_q:
+                    self.link.leftKeyPressed = True
+                    self.link.rightKeyPressed = False
+                    self.link.DIRECTION = self.link.LEFT
+                elif event.key == pygame.K_d:
+                    self.link.rightKeyPressed = True
+                    self.link.leftKeyPressed = False
+                    self.link.DIRECTION = self.link.RIGHT
+                        
+            elif event.type == pygame.KEYUP:
+                if event.key == pygame.K_z:
+                    self.link.upKeyPressed = False
+                    if self.link.rightKeyPressed:
+                        self.link.DIRECTION = self.link.RIGHT
+                    elif self.link.leftKeyPressed:
+                        self.link.DIRECTION = self.link.LEFT
+                        
+                elif event.key == pygame.K_s:
+                    self.link.downKeyPressed = False
+                    if self.link.rightKeyPressed:
+                        self.link.DIRECTION = self.link.RIGHT
+                    elif self.link.leftKeyPressed:
+                        self.link.DIRECTION = self.link.LEFT
+                        
+                elif event.key == pygame.K_q:
+                    self.link.leftKeyPressed = False
+                    if self.link.upKeyPressed:
+                        self.link.DIRECTION = self.link.UP
+                    elif self.link.downKeyPressed:
+                        self.link.DIRECTION = self.link.DOWN
+                        
+                elif event.key == pygame.K_d:
+                    self.link.rightKeyPressed = False
+                    if self.link.upKeyPressed:
+                        self.link.DIRECTION = self.link.UP
+                    elif self.link.downKeyPressed:
+                        self.link.DIRECTION = self.link.DOWN
+
     def main_loop(self):
         while not self.done:
             self.draw()
             self.clock.tick(60)
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    pygame.display.quit()
-                    pygame.quit()
-                elif event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_z:
-                        print("z")
-                    elif event.key == pygame.K_s:
-                        print("s")
-                    elif event.key == pygame.K_q:
-                        print("q")
-                    elif event.key == pygame.K_d:
-                        print("d")
-                    elif event.key == pygame.K_p:
-                        pause_menu() 
-                    elif event.key == pygame.K_n:
-                        pygame.display.quit() 
-                        pygame.quit()
-        #pygame.quit()
+            self.handle_events()
+            self.all_sprite_list.update()
+
         
     def draw(self):
-
         self.screen.fill((self.color_x, self.color_y, self.color_z))
         self.all_sprite_list.draw(self.screen)
         self.current_room.wall_list.draw(self.screen)
-        pygame.display.flip()
+        pygame.display.flip()      
         
-   
+class Link(pygame.sprite.Sprite):
+    
+    def __init__(self, x, y,DIRECTION,upKeyPressed,downKeyPressed,leftKeyPressed,rightKeyPressed, spacePressed,has_sword,has_bombs):
+        pygame.sprite.Sprite.__init__(self)
+        self.image = pygame.image.load("link/link_up1.png")
+        self.right1 = pygame.image.load("link/walk_right1.png")
+        self.right2 = pygame.image.load("link/link_right2.png")
+        self.left1 = pygame.image.load("link/link_left1.png")
+        self.left2 = pygame.image.load("link/link_left2.png")
+        self.up1 = pygame.image.load("link/link_up1.png")
+        self.up2 = pygame.image.load("link/link_up2.png")
+        self.down1 = pygame.image.load("link/link_down1.png")
+        self.down2 = pygame.image.load("link/link_down2.png")
+        self.attack_right = pygame.image.load("link/attack_right.png")
+        self.attack_left = pygame.image.load("link/attack_left.png")
+        self.attack_up = pygame.image.load("link/attack_up.png")
+        self.attack_down = pygame.image.load("link/attack_down.png")
+        self.right_walk = [self.right1,self.right2]
+        self.left_walk = [self.left1, self.left2]
+        self.up_walk = [self.up1, self.up2]
+        self.down_walk = [self.down1,self.down2]
+        self.ticker = 0
+        self.current_frame = 0
+        self.rect = self.image.get_rect()
+        self.rect.x = x
+        self.rect.y = y
+        self.change_x_left = 0
+        self.change_x_right = 0
+        self.change_y_up = 0
+        self.change_y_down = 0
+        self.walls = None
+        self.can_move = True
+        self.DIRECTION = DIRECTION
+        self.upKeyPressed = upKeyPressed
+        self.downKeyPressed = downKeyPressed
+        self.leftKeyPressed = leftKeyPressed
+        self.rightKeyPressed = rightKeyPressed
+        self.spacePressed = spacePressed
+        self.WALKRATE = 5
+        self.RIGHT, self.LEFT, self.UP, self.DOWN = "right left up down".split()
+        self.action = 'walking'
+    
+    def update(self):
+        
+        if self.downKeyPressed:
+            self.rect.y += 5
+            self.image = self.down_walk[self.current_frame]
+            wall_hit_list = pygame.sprite.spritecollide(self, self.walls, False)
+            for wall in wall_hit_list:
+                self.rect.bottom = wall.rect.top
 
-                            
+        elif self.upKeyPressed:
+            self.rect.y -= 5
+            self.image = self.up_walk[self.current_frame]
+            wall_hit_list = pygame.sprite.spritecollide(self, self.walls, False)
+
+            for wall in wall_hit_list:
+               self.rect.top = wall.rect.bottom
+                
+        elif self.leftKeyPressed:
+            self.rect.x -= 5
+            self.image = self.left_walk[self.current_frame]
+            wall_hit_list = pygame.sprite.spritecollide(self, self.walls, False)
+            for wall in wall_hit_list:
+                self.rect.left = wall.rect.right
+
+        elif self.rightKeyPressed:
+            self.rect.x += 5
+            self.image = self.right_walk[self.current_frame]
+            wall_hit_list = pygame.sprite.spritecollide(self, self.walls, False)
+            for wall in wall_hit_list:
+                self.rect.right = wall.rect.left
+        elif self.spacePressed:
+            if self.action == "attacking":
+                pass
+        self.ticker += 1
+        if self.ticker % 8 == 0:
+            self.current_frame = (self.current_frame + 1) % 2
+
 def program_logic():
     pygame.init()
     menu()
