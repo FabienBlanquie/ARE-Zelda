@@ -18,6 +18,7 @@ FPS = 60  # This variable will define how many frames we update per second.
 
 current_map = []
 object_map = []
+player_starting_position = []
 
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
@@ -30,7 +31,8 @@ rect = pygame.Rect((0, 0), (32, 32))  # First tuple is position, second is size.
 image = pygame.Surface((32, 32))  # The tuple represent size.
 image.fill(WHITE)  # We fill our surface with a nice white color (by default black).
 
-TreeImg = pygame.image.load("overworld/single_tree.png")
+BushImg = pygame.image.load("overworld/bush.png")
+StoneWallImg = pygame.image.load("overworld/wall.png")
 
 class Settings_object:
       def __init__(self, width, height):
@@ -190,7 +192,11 @@ def map_convertor(matrice):
         value_index = 0
         for value in row:
             if value == -1:
-                object_map.append(Wall(row_index*55, value_index*55, TreeImg))
+                object_map.append(Wall(row_index*54, value_index*55, BushImg))
+            if value == -2:
+                object_map.append(Wall(row_index*54, value_index*55, StoneWallImg))
+            if value == 0:
+                player_starting_position.append(Player(row_index*54,value_index*55,"UP",False,False,False,False,False,False,False))
             value_index = value_index + 1
         row_index = row_index + 1
     return object_map
@@ -210,7 +216,7 @@ class GameMain():
         self.color_x = 252
         self.color_y = 216
         self.color_z = 168
-        self.player = Player(200,500,"UP",False,False,False,False,False,False,False)        
+        self.player = player_starting_position[0]     
         self.all_sprite_list = pygame.sprite.Group()
         self.all_sprite_list.add(self.player)
         self.clock = pygame.time.Clock()
@@ -362,8 +368,7 @@ class GameMain():
             self.clock.tick(60)
             self.handle_events()
             self.all_sprite_list.update()
-
-        
+            
     def draw(self):
         self.screen.fill((self.color_x, self.color_y, self.color_z))
         self.all_sprite_list.draw(self.screen)
@@ -375,10 +380,10 @@ class Player(pygame.sprite.Sprite):
     def __init__(self, x, y,DIRECTION,upKeyPressed,downKeyPressed,leftKeyPressed,rightKeyPressed, spacePressed,has_sword,has_bombs):
         pygame.sprite.Sprite.__init__(self)
         self.image = pygame.image.load("player/player_up1.png")
-        self.attack_right = pygame.image.load("player/attack_right.png")
-        self.attack_left = pygame.image.load("player/attack_left.png")
-        self.attack_up = pygame.image.load("player/attack_up.png")
-        self.attack_down = pygame.image.load("player/attack_down.png")
+        self.attack_right = pygame.image.load("player/plate/sword/d/d5.png")
+        self.attack_left = pygame.image.load("player/plate/sword/q/q5.png")
+        self.attack_up = pygame.image.load("player/plate/sword/z/z5.png")
+        self.attack_down = pygame.image.load("player/plate/sword/s/s5.png")
         self.right_walk = get_plate_walk_right()
         self.left_walk = get_plate_walk_left()
         self.up_walk = get_plate_walk_up()
