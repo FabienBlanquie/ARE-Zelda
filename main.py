@@ -10,6 +10,7 @@ import pygame
 import pygame_menu
 import os
 import json
+import random
 
 #successes, failures = pygame.init()
 #print("{0} successes and {1} failures".format(successes, failures))
@@ -18,6 +19,7 @@ FPS = 60  # This variable will define how many frames we update per second.
 
 current_map = []
 object_map = []
+mob_map = []
 player_starting_position = []
 
 BLACK = (0, 0, 0)
@@ -26,13 +28,21 @@ RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 BLUE = (0, 0, 255)
 
+
+
 clock = pygame.time.Clock()
 rect = pygame.Rect((0, 0), (32, 32))  # First tuple is position, second is size.
 image = pygame.Surface((32, 32))  # The tuple represent size.
 image.fill(WHITE)  # We fill our surface with a nice white color (by default black).
 
 BushImg = pygame.image.load("overworld/bush.png")
+BushImg = pygame.transform.scale(BushImg, (55, 55))
 StoneWallImg = pygame.image.load("overworld/wall.png")
+StoneWallImg = pygame.transform.scale(StoneWallImg, (55, 55))
+FireCampImg = pygame.image.load("overworld/firecamp.png")
+FireCampImg = pygame.transform.scale(FireCampImg, (55, 55))
+DoorImg = pygame.image.load("overworld/door.png")
+DoorImg = pygame.transform.scale(DoorImg, (55, 55))
 
 class Settings_object:
       def __init__(self, width, height):
@@ -161,6 +171,7 @@ def set_map(value, map):
         current_map.append(line)
 
 def set_username(value):
+    print(value)
     pass
 
 class Wall(pygame.sprite.Sprite):
@@ -172,16 +183,26 @@ class Wall(pygame.sprite.Sprite):
         self.rect.y = y
         self.destructible = False
         
+class Background(pygame.sprite.Sprite):
+    def __init__(self,x,y,image):
+        pygame.sprite.Sprite.__init__(self)
+        self.image = image
+        self.rect = self.image.get_rect()
+        self.rect.x = x
+        self.rect.y = y
+        
 class World(object):
     wall_list = None
     def __init__(self):
         self.wall_list = pygame.sprite.Group()
+        self.mobs_list = pygame.sprite.Group()
+        self.arrows = pygame.sprite.Group()
         
 def start_playing(): 
     map_convertor(current_map)
     Loaded_world()
-    game = GameMain()
-    game.main_loop()
+   # game = GameMain()
+    GameMain().main_loop()
 
 def map_convertor(matrice):
     global object_map
@@ -192,11 +213,17 @@ def map_convertor(matrice):
         value_index = 0
         for value in row:
             if value == -1:
-                object_map.append(Wall(row_index*54, value_index*55, BushImg))
+                object_map.append(Wall(value_index*55, row_index*55, BushImg))
             if value == -2:
-                object_map.append(Wall(row_index*54, value_index*55, StoneWallImg))
+                object_map.append(Wall(value_index*55, row_index*55, StoneWallImg))
+            if value == 1:
+                object_map.append(Wall(value_index*55, row_index*55, FireCampImg))
+            if value == 2:
+                object_map.append(Background(value_index*55, row_index*55, DoorImg))
+            if value == 22:
+                mob_map.append(Mob(value_index*55, row_index*55, 3))
             if value == 0:
-                player_starting_position.append(Player(row_index*54,value_index*55,"UP",False,False,False,False,False,False,False))
+                player_starting_position.append(Player(value_index*55, row_index*55,"UP",False,False,False,False,False))
             value_index = value_index + 1
         row_index = row_index + 1
     return object_map
@@ -205,8 +232,12 @@ class Loaded_world(World):
     def __init__(self):
         World.__init__(self)
         walls = object_map
+        mobs = mob_map
         for wall in walls:
             self.wall_list.add(wall)
+        for mob in mobs:
+            mob.walls = self.wall_list
+            self.mobs_list.add(mob)
             
 class GameMain():
     done = False
@@ -225,6 +256,7 @@ class GameMain():
         self.rooms = [[Loaded_world()]]
         self.current_room = self.rooms[self.current_y][self.current_x]
         self.player.walls = self.rooms[self.current_y][self.current_x].wall_list
+        self.player.mobs = self.rooms[self.current_y][self.current_x].mobs_list
         self.screen = pygame.display.set_mode((self.width, self.height))
         pygame.mixer.pre_init(44100, -16, 2, 2048)
         pygame.init()
@@ -366,6 +398,7 @@ class GameMain():
         while not self.done:
             self.draw()
             self.clock.tick(60)
+            self.player.mobs.update()
             self.handle_events()
             self.all_sprite_list.update()
             
@@ -373,11 +406,12 @@ class GameMain():
         self.screen.fill((self.color_x, self.color_y, self.color_z))
         self.all_sprite_list.draw(self.screen)
         self.current_room.wall_list.draw(self.screen)
+        self.current_room.mobs_list.draw(self.screen)
         pygame.display.flip()      
         
 class Player(pygame.sprite.Sprite):
     
-    def __init__(self, x, y,DIRECTION,upKeyPressed,downKeyPressed,leftKeyPressed,rightKeyPressed, spacePressed,has_sword,has_bombs):
+    def __init__(self, x, y, DIRECTION, upKeyPressed, downKeyPressed, leftKeyPressed, rightKeyPressed, spacePressed):
         pygame.sprite.Sprite.__init__(self)
         self.image = pygame.image.load("player/player_up1.png")
         self.attack_right = pygame.image.load("player/plate/sword/d/d5.png")
@@ -461,11 +495,163 @@ class Player(pygame.sprite.Sprite):
         self.ticker += 1
         if self.ticker % 8 == 0:
             self.current_frame = (self.current_frame + 1) % 2
+            
+class Mob(pygame.sprite.Sprite):
+    def __init__(self,x,y,hitpoint):
+        self.left1 = pygame.image.load("mob/0.png")
+        self.left2 = pygame.image.load("mob/1.png")
+        self.down1 = pygame.image.load("mob/2.png")
+        self.down2 = pygame.image.load("mob/3.png")
+        self.right1 = pygame.image.load("mob/4.png")
+        self.right2 = pygame.image.load("mob/5.png")
+        self.up1 = pygame.image.load("mob/6.png")
+        self.up2 = pygame.image.load("mob/7.png")
+        self.left_walk = [self.left1,self.left2]
+        self.right_walk = [self.right1, self.right2]
+        self.up_walk = [self.up1, self.up2]
+        self.down_walk = [self.down1, self.down2]
+        pygame.sprite.Sprite.__init__(self)
+        self.rect = pygame.Rect(0,0,48,48)
+        self.image = pygame.image.load("mob/0.png")
+        self.rect.x = x
+        self.rect.y = y
+        self.ticker = 0
+        self.current_frame = 0
+        self.walk_anim_frame = 0
+        self.hitpoint = hitpoint
+        self.x_change = 1
+        self.t = 0
+        self.timer = random.randint(60,180)
+        self.arrow_timer = random.randint(0,120)
+        self.arrow_t = 0
+        self.randomDirections = ["up", "down","left","right"]
+        self.randomnumber = random.randint(0,3)
+        self.direction = self.randomDirections[self.randomnumber]
+        self.walls = None
+        self.doors = None
+        #self.game = game
+        self.x_change = 1
+        self.y_change = 1
+        self.anim_ticker = 0
+        
+    def update(self):
+        if self.direction == "right":
+            self.image = self.right_walk[self.walk_anim_frame]
+            self.rect.x += self.x_change
+            wall_hit_list = pygame.sprite.spritecollide(self, self.walls, False)
+            for wall in wall_hit_list:
+                self.rect.right = wall.rect.left
+                self.direction = self.randomDirections[2]
+            self.t += 1
+    #        if self.arrow_t >= self.arrow_timer:
+    #            self.game.arrows.add(Mob_Arrow(self.rect.x, self.rect.y, self.direction))
+    #            self.arrow_t = 0
+    #            self.arrow_timer = random.randint(60,240)
+            self.arrow_t += 1
+            if self.t == self.timer: 
+              self.direction = self.randomDirections[random.randint(0,3)]
+              self.t = 0
+            
+        elif self.direction == "left":
+            self.image = self.left_walk[self.walk_anim_frame]
+            self.rect.x -= self.x_change
+            wall_hit_list = pygame.sprite.spritecollide(self, self.walls, False)
+            for wall in wall_hit_list:
+                self.rect.left = wall.rect.right
+                self.direction = self.randomDirections[3]
+            self.t += 1
+            self.arrow_t += 1
+   #         if self.arrow_t >= self.arrow_timer:
+   #             self.game.arrows.add(Mob_Arrow(self.rect.x, self.rect.y, self.direction))
+   #             self.arrow_t = 0
+   #             self.arrow_timer = random.randint(60,240)
+            if self.t == self.timer:
+                self.direction = self.randomDirections[random.randint(0,3)]
+                self.t = 0
+        elif self.direction == "up":
+            self.image = self.up_walk[self.walk_anim_frame]
+            self.rect.y -= self.y_change
+            wall_hit_list = pygame.sprite.spritecollide(self, self.walls, False)
+            for wall in wall_hit_list:
+                self.rect.top = wall.rect.bottom
+                self.direction = self.randomDirections[1]
+
+            self.t += 1
+            self.arrow_t += 1
+   #         if self.arrow_t >= self.arrow_timer:
+   #             self.game.arrows.add(Mob_Arrow(self.rect.x, self.rect.y, self.direction))
+   #             self.arrow_t = 0
+   #             self.arrow_timer = random.randint(60,240)
+            if self.t == self.timer:
+                self.direction = self.randomDirections[random.randint(0,3)]
+                self.t = 0
+
+        elif self.direction == "down":
+            self.image = self.down_walk[self.walk_anim_frame]
+            self.rect.y += self.y_change
+            wall_hit_list = pygame.sprite.spritecollide(self, self.walls, False)
+            for wall in wall_hit_list:
+
+                self.rect.bottom = wall.rect.top
+                self.direction = self.randomDirections[0]
+            self.t += 1
+            self.arrow_t += 1
+   #         if self.arrow_t >= self.arrow_timer:
+   #             self.game.arrows.add(Mob_Arrow(self.rect.x, self.rect.y, self.direction))
+   #             self.arrow_t = 0
+   #             self.arrow_timer = random.randint(60,240)
+            if self.t == self.timer:
+                self.direction = self.randomDirections[random.randint(0,3)]
+                self.t = 0
+            
+        if self.hitpoint <= 0:
+            self.arrow_t = -1
+            self.x_change = 0
+            self.y_change = 0
+            self.rect.y = self.rect.y
+            self.image = self.die[self.current_frame]
+            self.ticker += 1
+            if self.ticker % 15 == 0:
+                self.current_frame = (self.current_frame + 1) % 3
+            if self.image == self.die[2]:
+                self.kill()
+                self.effect.play()
+                
+        self.anim_ticker += 1
+        if self.anim_ticker % 10 == 0:
+            self.walk_anim_frame = (self.walk_anim_frame + 1) % 2
+            
+class Mob_Arrow(pygame.sprite.Sprite):
+    def __init__(self,x,y,direction):
+        pygame.sprite.Sprite.__init__(self)
+        self.direction = direction
+        if self.direction == "right":
+            self.image = pygame.image.load("mob/arrow/2.png")
+        elif self.direction == "left":
+            self.image = pygame.image.load("mob/arrow/0.png")
+        elif self.direction == "up":
+            self.image = pygame.image.load("mob/arrow/3.png")
+        elif self.direction == "down":
+            self.image = pygame.image.load("mob/arrow/1.png")
+        self.rect = self.image.get_rect()
+        self.rect.x = x
+        self.rect.y = y
+        
+    def update(self):
+        if self.direction == "right":
+            self.rect.x += 6
+        elif self.direction == "left":
+            self.rect.x -= 6
+        elif self.direction == "up":
+            self.rect.y -= 6
+        elif self.direction == "down":
+            self.rect.y += 6
 
 def program_logic():
     pygame.init()
     menu()
     
+
 score_data = decode_score()
 level_list = get_level_list()
 settings = settings_logic()
