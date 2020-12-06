@@ -41,6 +41,7 @@ DoorImg = pygame.image.load("overworld/door.png")
 DoorImg = pygame.transform.scale(DoorImg, (55, 55))
 
 class SettingsObject:
+    
       def __init__(self, width, height):
           self.width = width
           self.height = height
@@ -179,6 +180,7 @@ def set_username(value):
     pass
 
 class Wall(pygame.sprite.Sprite):
+    
     def __init__(self,x,y,image):
         pygame.sprite.Sprite.__init__(self)
         self.image = image
@@ -188,6 +190,7 @@ class Wall(pygame.sprite.Sprite):
         self.destructible = False
         
 class Background(pygame.sprite.Sprite):
+    
     def __init__(self,x,y,image):
         pygame.sprite.Sprite.__init__(self)
         self.image = image
@@ -197,6 +200,7 @@ class Background(pygame.sprite.Sprite):
         
 class World(object):
     wall_list = None
+    
     def __init__(self):
         self.wall_list = pygame.sprite.Group()
         self.mobs_list = pygame.sprite.Group()
@@ -224,6 +228,8 @@ def map_convertor(matrice, game):
                 object_map.append(Background(value_index*55, row_index*55, DoorImg))
             if value == 22:
                 mob_map.append(Mob(value_index*55, row_index*55, 3, game))
+            if value == 55:
+                mob_map.append(Boss(value_index*55, row_index*55, 200, game))
             if value == 0:
                 player_starting_position.append(Player(value_index*55, row_index*55,"UP",False,False,False,False,False))
             value_index = value_index + 1
@@ -644,7 +650,134 @@ class MobProjectile(pygame.sprite.Sprite):
             self.rect.y -= 6
         elif self.direction == "down":
             self.rect.y += 6
-
+        
+class Boss(pygame.sprite.Sprite):
+    def __init__(self,x,y,hitpoint, game):
+        self.left1 = pygame.image.load("mob/boss/q/1.png")
+        self.left2 = pygame.image.load("mob/boss/q/2.png")
+        self.down1 = pygame.image.load("mob/boss/s/1.png")
+        self.down2 = pygame.image.load("mob/boss/s/2.png")
+        self.right1 = pygame.image.load("mob/boss/d/1.png")
+        self.right2 = pygame.image.load("mob/boss/d/2.png")
+        self.up1 = pygame.image.load("mob/boss/z/1.png")
+        self.up2 = pygame.image.load("mob/boss/z/2.png")
+        self.left_walk = [self.left1,self.left2]
+        self.right_walk = [self.right1, self.right2]
+        self.up_walk = [self.up1, self.up2]
+        self.down_walk = [self.down1, self.down2]
+        pygame.sprite.Sprite.__init__(self)
+        self.image = pygame.image.load("mob/boss/d/1.png")
+        self.rect = self.image.get_rect()
+        self.rect.x = x
+        self.rect.y = y
+        self.ticker = 0
+        self.current_frame = 0
+        self.walk_anim_frame = 0
+        self.hitpoint = hitpoint
+        self.x_change = 1
+        self.t = 0
+        self.timer = random.randint(60,180)
+        self.arrow_timer = random.randint(0,60)
+        self.arrow_t = 0
+        self.randomDirections = ["up", "down","left","right"]
+        self.randomnumber = random.randint(0,3)
+        self.direction = self.randomDirections[self.randomnumber]
+        self.die = [self.down1,self.down1,self.down1]
+        self.walls = None
+        self.doors = None
+        self.game = game
+        self.x_change = 1
+        self.y_change = 1
+        self.anim_ticker = 0
+        
+    def update(self):
+        if self.direction == "right":
+            self.image = self.right_walk[self.walk_anim_frame]
+            self.rect.x += self.x_change
+            wall_hit_list = pygame.sprite.spritecollide(self, self.walls, False)
+            for wall in wall_hit_list:
+                self.rect.right = wall.rect.left
+                self.direction = self.randomDirections[2]
+            self.t += 1
+            if self.arrow_t >= self.arrow_timer:
+                self.game.arrows.add(MobProjectile(self.rect.x, self.rect.y, self.direction))
+                self.game.arrows.add(MobProjectile(self.rect.x , self.rect.y + (self.rect.y/2), self.direction))
+                self.game.arrows.add(MobProjectile(self.rect.x , self.rect.y + (self.rect.y/3), self.direction))
+                self.arrow_t = 0
+                self.arrow_timer = random.randint(30,60)
+            self.arrow_t += 1
+            if self.t == self.timer: 
+              self.direction = self.randomDirections[random.randint(0,3)]
+              self.t = 0
+        elif self.direction == "left":
+            self.image = self.left_walk[self.walk_anim_frame]
+            self.rect.x -= self.x_change
+            wall_hit_list = pygame.sprite.spritecollide(self, self.walls, False)
+            for wall in wall_hit_list:
+                self.rect.left = wall.rect.right
+                self.direction = self.randomDirections[3]
+            self.t += 1
+            self.arrow_t += 1
+            if self.arrow_t >= self.arrow_timer:
+                self.game.arrows.add(MobProjectile(self.rect.x, self.rect.y, self.direction))
+                self.game.arrows.add(MobProjectile(self.rect.x , self.rect.y + (self.rect.y/2), self.direction))
+                self.game.arrows.add(MobProjectile(self.rect.x , self.rect.y + (self.rect.y/3), self.direction))
+                self.arrow_t = 0
+                self.arrow_timer = random.randint(30,60)
+            if self.t == self.timer:
+                self.direction = self.randomDirections[random.randint(0,3)]
+                self.t = 0
+        elif self.direction == "up":
+            self.image = self.up_walk[self.walk_anim_frame]
+            self.rect.y -= self.y_change
+            wall_hit_list = pygame.sprite.spritecollide(self, self.walls, False)
+            for wall in wall_hit_list:
+                self.rect.top = wall.rect.bottom
+                self.direction = self.randomDirections[1]
+            self.t += 1
+            self.arrow_t += 1
+            if self.arrow_t >= self.arrow_timer:
+                self.game.arrows.add(MobProjectile(self.rect.x, self.rect.y, self.direction))
+                self.game.arrows.add(MobProjectile(self.rect.x + (self.rect.x/2), self.rect.y, self.direction))
+                self.game.arrows.add(MobProjectile(self.rect.x + (self.rect.x/3), self.rect.y, self.direction))
+                self.arrow_t = 0
+                self.arrow_timer = random.randint(30,60)
+            if self.t == self.timer:
+                self.direction = self.randomDirections[random.randint(0,3)]
+                self.t = 0
+        elif self.direction == "down":
+            self.image = self.down_walk[self.walk_anim_frame]
+            self.rect.y += self.y_change
+            wall_hit_list = pygame.sprite.spritecollide(self, self.walls, False)
+            for wall in wall_hit_list:
+                self.rect.bottom = wall.rect.top
+                self.direction = self.randomDirections[0]
+            self.t += 1
+            self.arrow_t += 1
+            if self.arrow_t >= self.arrow_timer:
+                self.game.arrows.add(MobProjectile(self.rect.x, self.rect.y, self.direction))
+                self.game.arrows.add(MobProjectile(self.rect.x + (self.rect.x/2), self.rect.y, self.direction))
+                self.game.arrows.add(MobProjectile(self.rect.x + (self.rect.x/3), self.rect.y, self.direction))
+                self.arrow_t = 0
+                self.arrow_timer = random.randint(30,60)
+            if self.t == self.timer:
+                self.direction = self.randomDirections[random.randint(0,3)]
+                self.t = 0  
+        if self.hitpoint <= 0:
+            self.arrow_t = -1
+            self.x_change = 0
+            self.y_change = 0
+            self.rect.y = self.rect.y
+            self.image = self.die[self.current_frame]
+            self.ticker += 1
+            if self.ticker % 15 == 0:
+                self.current_frame = (self.current_frame + 1) % 3
+            if self.image == self.die[2]:
+                self.kill()     
+        self.anim_ticker += 1
+        if self.anim_ticker % 10 == 0:
+            self.walk_anim_frame = (self.walk_anim_frame + 1) % 2
+        
 def program_logic():
     pygame.init()
     menu()
