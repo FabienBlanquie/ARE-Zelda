@@ -165,6 +165,14 @@ def set_map(value, map):
     matrice = decode_csv(filename)
     for line in matrice:
         current_map.append(line)
+        
+def first_map(level_list):
+    global current_map
+    current_map = []
+    filename = f"map/{level_list[0][0]}.csv"
+    matrice = decode_csv(filename)
+    for line in matrice:
+        current_map.append(line)
 
 def set_username(value):
     print(value)
@@ -643,6 +651,7 @@ def program_logic():
     
 score_data = decode_score()
 level_list = get_level_list()
+first_map(level_list)
 settings = settings_logic()
 gameDisplay = pygame.display.set_mode((settings.width, settings.height)) 
 program_logic()
