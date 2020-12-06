@@ -40,7 +40,7 @@ FireCampImg = pygame.transform.scale(FireCampImg, (55, 55))
 DoorImg = pygame.image.load("overworld/door.png")
 DoorImg = pygame.transform.scale(DoorImg, (55, 55))
 
-class Settings_object:
+class SettingsObject:
       def __init__(self, width, height):
           self.width = width
           self.height = height
@@ -52,7 +52,7 @@ def decode_settings():
           
 def settings_logic():
     settings_data = decode_settings()
-    settings = Settings_object(settings_data["width"],settings_data["height"])
+    settings = SettingsObject(settings_data["width"],settings_data["height"])
     return settings
 
 def decode_score():
@@ -203,7 +203,7 @@ class World(object):
         self.arrows = pygame.sprite.Group()
         
 def start_playing(): 
-    Loaded_world()
+    LoadedWorld()
     GameMain().main_loop()
 
 def map_convertor(matrice, game):
@@ -230,7 +230,7 @@ def map_convertor(matrice, game):
         row_index = row_index + 1
     return object_map, mob_map
         
-class Loaded_world(World):
+class LoadedWorld(World):
     
     def __init__(self):
         World.__init__(self)
@@ -255,7 +255,7 @@ class GameMain():
         self.clock = pygame.time.Clock()
         self.current_x = 0
         self.current_y = 0
-        self.rooms = [[Loaded_world()]]
+        self.rooms = [[LoadedWorld()]]
         self.current_room = self.rooms[self.current_y][self.current_x]
         self.player.walls = self.rooms[self.current_y][self.current_x].wall_list
         self.player.mobs = self.rooms[self.current_y][self.current_x].mobs_list
@@ -545,7 +545,7 @@ class Mob(pygame.sprite.Sprite):
                 self.direction = self.randomDirections[2]
             self.t += 1
             if self.arrow_t >= self.arrow_timer:
-                self.game.arrows.add(Mob_Arrow(self.rect.x, self.rect.y, self.direction))
+                self.game.arrows.add(MobProjectile(self.rect.x, self.rect.y, self.direction))
                 self.arrow_t = 0
                 self.arrow_timer = random.randint(60,240)
             self.arrow_t += 1
@@ -562,7 +562,7 @@ class Mob(pygame.sprite.Sprite):
             self.t += 1
             self.arrow_t += 1
             if self.arrow_t >= self.arrow_timer:
-                self.game.arrows.add(Mob_Arrow(self.rect.x, self.rect.y, self.direction))
+                self.game.arrows.add(MobProjectile(self.rect.x, self.rect.y, self.direction))
                 self.arrow_t = 0
                 self.arrow_timer = random.randint(60,240)
             if self.t == self.timer:
@@ -578,7 +578,7 @@ class Mob(pygame.sprite.Sprite):
             self.t += 1
             self.arrow_t += 1
             if self.arrow_t >= self.arrow_timer:
-                self.game.arrows.add(Mob_Arrow(self.rect.x, self.rect.y, self.direction))
+                self.game.arrows.add(MobProjectile(self.rect.x, self.rect.y, self.direction))
                 self.arrow_t = 0
                 self.arrow_timer = random.randint(60,240)
             if self.t == self.timer:
@@ -594,7 +594,7 @@ class Mob(pygame.sprite.Sprite):
             self.t += 1
             self.arrow_t += 1
             if self.arrow_t >= self.arrow_timer:
-                self.game.arrows.add(Mob_Arrow(self.rect.x, self.rect.y, self.direction))
+                self.game.arrows.add(MobProjectile(self.rect.x, self.rect.y, self.direction))
                 self.arrow_t = 0
                 self.arrow_timer = random.randint(60,240)
             if self.t == self.timer:
@@ -615,21 +615,21 @@ class Mob(pygame.sprite.Sprite):
         if self.anim_ticker % 10 == 0:
             self.walk_anim_frame = (self.walk_anim_frame + 1) % 2
             
-class Mob_Arrow(pygame.sprite.Sprite):
+class MobProjectile(pygame.sprite.Sprite):
     def __init__(self,x,y,direction):
         pygame.sprite.Sprite.__init__(self)
         self.direction = direction
         if self.direction == "right":
-            self.image = pygame.image.load("mob/arrow/2.png")
+            self.image = pygame.image.load("mob/fireball/2.png")
             self.image = pygame.transform.scale(self.image, (30, 10))
         elif self.direction == "left":
-            self.image = pygame.image.load("mob/arrow/0.png")
+            self.image = pygame.image.load("mob/fireball/0.png")
             self.image = pygame.transform.scale(self.image, (30, 10))
         elif self.direction == "up":
-            self.image = pygame.image.load("mob/arrow/3.png")
+            self.image = pygame.image.load("mob/fireball/3.png")
             self.image = pygame.transform.scale(self.image, (10, 30))
         elif self.direction == "down":
-            self.image = pygame.image.load("mob/arrow/1.png")
+            self.image = pygame.image.load("mob/fireball/1.png")
             self.image = pygame.transform.scale(self.image, (10, 30))
         self.rect = self.image.get_rect()
         self.rect.x = x
