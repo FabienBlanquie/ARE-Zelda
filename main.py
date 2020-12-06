@@ -223,6 +223,7 @@ def map_convertor(matrice, game):
     return object_map, mob_map
         
 class Loaded_world(World):
+    
     def __init__(self):
         World.__init__(self)
         walls, mobs = map_convertor(current_map, self)        
@@ -263,6 +264,13 @@ class GameMain():
             self.current_room.arrows.update()
             self.all_sprite_list.update()
             arrow_hit_list = self.current_room.arrows
+            for arrow in arrow_hit_list:
+                    if pygame.sprite.collide_rect(self.player, arrow) and self.player.action == "attacking":
+                        arrow.kill()
+                    elif pygame.sprite.collide_rect(self.player, arrow) and self.player.action == "walking":
+                        self.player.kill()
+                    elif pygame.sprite.spritecollideany(arrow,self.player.walls):
+                        arrow.kill()
             
     def draw(self):
         self.screen.fill((self.color_x, self.color_y, self.color_z))
@@ -277,6 +285,7 @@ class GameMain():
             if event.type == pygame.QUIT:
                 pygame.display.quit()
                 pygame.quit()
+                
             elif event.type == pygame.KEYDOWN and self.player.can_move == True:
                 if event.key == pygame.K_ESCAPE:
                     self.done = True
@@ -297,7 +306,6 @@ class GameMain():
                     self.player.rightKeyPressed = True
                     self.player.leftKeyPressed = False
                     self.player.DIRECTION = self.player.RIGHT
-                
                 elif event.key == pygame.K_SPACE:
                     self.player.spacePressed = True
                     self.player.can_move = False
@@ -343,29 +351,25 @@ class GameMain():
                     if self.player.rightKeyPressed:
                         self.player.DIRECTION = self.player.RIGHT
                     elif self.player.leftKeyPressed:
-                        self.player.DIRECTION = self.player.LEFT
-                        
+                        self.player.DIRECTION = self.player.LEFT     
                 elif event.key == pygame.K_s:
                     self.player.downKeyPressed = False
                     if self.player.rightKeyPressed:
                         self.player.DIRECTION = self.player.RIGHT
                     elif self.player.leftKeyPressed:
-                        self.player.DIRECTION = self.player.LEFT
-                        
+                        self.player.DIRECTION = self.player.LEFT          
                 elif event.key == pygame.K_q:
                     self.player.leftKeyPressed = False
                     if self.player.upKeyPressed:
                         self.player.DIRECTION = self.player.UP
                     elif self.player.downKeyPressed:
-                        self.player.DIRECTION = self.player.DOWN
-                        
+                        self.player.DIRECTION = self.player.DOWN       
                 elif event.key == pygame.K_d:
                     self.player.rightKeyPressed = False
                     if self.player.upKeyPressed:
                         self.player.DIRECTION = self.player.UP
                     elif self.player.downKeyPressed:
-                        self.player.DIRECTION = self.player.DOWN
-                        
+                        self.player.DIRECTION = self.player.DOWN   
                 elif event.key == pygame.K_SPACE:
                     self.player.can_move = True
                     self.player.spacePressed = False
@@ -404,8 +408,7 @@ class GameMain():
                         self.player.leftKeyPressed = False
                         self.player.rightKeyPressed = False
                     self.player.action = "walking"
-    
-        
+            
 class Player(pygame.sprite.Sprite):
     
     def __init__(self, x, y, DIRECTION, upKeyPressed, downKeyPressed, leftKeyPressed, rightKeyPressed, spacePressed):
@@ -449,22 +452,18 @@ class Player(pygame.sprite.Sprite):
             wall_hit_list = pygame.sprite.spritecollide(self, self.walls, False)
             for wall in wall_hit_list:
                 self.rect.bottom = wall.rect.top
-
         elif self.upKeyPressed:
             self.rect.y -= 5
             self.image = self.up_walk[self.current_frame]
             wall_hit_list = pygame.sprite.spritecollide(self, self.walls, False)
-
             for wall in wall_hit_list:
-               self.rect.top = wall.rect.bottom
-                
+               self.rect.top = wall.rect.bottom                
         elif self.leftKeyPressed:
             self.rect.x -= 5
             self.image = self.left_walk[self.current_frame]
             wall_hit_list = pygame.sprite.spritecollide(self, self.walls, False)
             for wall in wall_hit_list:
                 self.rect.left = wall.rect.right
-
         elif self.rightKeyPressed:
             self.rect.x += 5
             self.image = self.right_walk[self.current_frame]
@@ -473,22 +472,18 @@ class Player(pygame.sprite.Sprite):
                 self.rect.right = wall.rect.left
         elif self.spacePressed:
             if self.action == "attacking":
-                #mob_hit_list = pygame.sprite.spritecollide(self, self.mobs, False)
+                mob_hit_list = pygame.sprite.spritecollide(self, self.mobs, False)
                 wall_hit_list = pygame.sprite.spritecollide(self, self.walls, False)
-                #for mob in mob_hit_list:
-                #    if self.rect.colliderect(mob):
-                #        if self.DIRECTION == self.UP:
-                #            pass
-                            #mob.hitpoint -= 1
-                #        if self.DIRECTION == self.LEFT:
-                #            pass
-                            #mob.hitpoint -= 1
-                #        if self.DIRECTION == self.RIGHT:
-                #            pass
-                            #mob.hitpoint -= 1
-                #        if self.DIRECTION == self.DOWN:
-                #            pass
-                            #mob.hitpoint -= 1
+                for mob in mob_hit_list:
+                    if self.rect.colliderect(mob):
+                        if self.DIRECTION == self.UP:
+                            mob.hitpoint -= 1
+                        if self.DIRECTION == self.LEFT:
+                            mob.hitpoint -= 1
+                        if self.DIRECTION == self.RIGHT:
+                            mob.hitpoint -= 1
+                        if self.DIRECTION == self.DOWN:
+                            mob.hitpoint -= 1
         self.ticker += 1
         if self.ticker % 8 == 0:
             self.current_frame = (self.current_frame + 1) % 2
@@ -524,6 +519,7 @@ class Mob(pygame.sprite.Sprite):
         self.randomDirections = ["up", "down","left","right"]
         self.randomnumber = random.randint(0,3)
         self.direction = self.randomDirections[self.randomnumber]
+        self.die = [self.down1,self.down1,self.down1]
         self.walls = None
         self.doors = None
         self.game = game
@@ -548,7 +544,6 @@ class Mob(pygame.sprite.Sprite):
             if self.t == self.timer: 
               self.direction = self.randomDirections[random.randint(0,3)]
               self.t = 0
-            
         elif self.direction == "left":
             self.image = self.left_walk[self.walk_anim_frame]
             self.rect.x -= self.x_change
@@ -572,7 +567,6 @@ class Mob(pygame.sprite.Sprite):
             for wall in wall_hit_list:
                 self.rect.top = wall.rect.bottom
                 self.direction = self.randomDirections[1]
-
             self.t += 1
             self.arrow_t += 1
             if self.arrow_t >= self.arrow_timer:
@@ -582,13 +576,11 @@ class Mob(pygame.sprite.Sprite):
             if self.t == self.timer:
                 self.direction = self.randomDirections[random.randint(0,3)]
                 self.t = 0
-
         elif self.direction == "down":
             self.image = self.down_walk[self.walk_anim_frame]
             self.rect.y += self.y_change
             wall_hit_list = pygame.sprite.spritecollide(self, self.walls, False)
             for wall in wall_hit_list:
-
                 self.rect.bottom = wall.rect.top
                 self.direction = self.randomDirections[0]
             self.t += 1
@@ -599,8 +591,7 @@ class Mob(pygame.sprite.Sprite):
                 self.arrow_timer = random.randint(60,240)
             if self.t == self.timer:
                 self.direction = self.randomDirections[random.randint(0,3)]
-                self.t = 0
-            
+                self.t = 0  
         if self.hitpoint <= 0:
             self.arrow_t = -1
             self.x_change = 0
@@ -611,9 +602,7 @@ class Mob(pygame.sprite.Sprite):
             if self.ticker % 15 == 0:
                 self.current_frame = (self.current_frame + 1) % 3
             if self.image == self.die[2]:
-                self.kill()
-                self.effect.play()
-                
+                self.kill()     
         self.anim_ticker += 1
         if self.anim_ticker % 10 == 0:
             self.walk_anim_frame = (self.walk_anim_frame + 1) % 2
@@ -624,12 +613,16 @@ class Mob_Arrow(pygame.sprite.Sprite):
         self.direction = direction
         if self.direction == "right":
             self.image = pygame.image.load("mob/arrow/2.png")
+            self.image = pygame.transform.scale(self.image, (30, 10))
         elif self.direction == "left":
             self.image = pygame.image.load("mob/arrow/0.png")
+            self.image = pygame.transform.scale(self.image, (30, 10))
         elif self.direction == "up":
             self.image = pygame.image.load("mob/arrow/3.png")
+            self.image = pygame.transform.scale(self.image, (10, 30))
         elif self.direction == "down":
             self.image = pygame.image.load("mob/arrow/1.png")
+            self.image = pygame.transform.scale(self.image, (10, 30))
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
