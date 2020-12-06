@@ -12,9 +12,6 @@ import os
 import json
 import random
 
-#successes, failures = pygame.init()
-#print("{0} successes and {1} failures".format(successes, failures))
-
 FPS = 60  # This variable will define how many frames we update per second.
 
 current_map = []
@@ -149,16 +146,12 @@ def menu():
     menu.add_button('Quit', pygame_menu.events.EXIT)
     menu.mainloop(gameDisplay)
     
+#TODO
 def apply_settings(value):
     print(value)
     pass    
 
-def pause_menu():
-    menu = pygame_menu.Menu(settings.height/2, settings.width/2, 'Pause', theme=pygame_menu.themes.THEME_BLUE)
-    menu.add_button('Resume', pygame_menu.events.CLOSE)
-    menu.add_button('Quit', pygame_menu.events.EXIT)
-    menu.mainloop(gameDisplay)
-    
+#Select map to play    
 def set_map(value, map):
     global current_map
     current_map = []
@@ -167,6 +160,7 @@ def set_map(value, map):
     for line in matrice:
         current_map.append(line)
         
+#used as default value to prevent crash if the user tap "Play" without using the map selection
 def first_map(level_list):
     global current_map
     current_map = []
@@ -175,10 +169,12 @@ def first_map(level_list):
     for line in matrice:
         current_map.append(line)
 
+#TODO
 def set_username(value):
     print(value)
     pass
 
+#Class used for the walls
 class Wall(pygame.sprite.Sprite):
     
     def __init__(self,x,y,image):
@@ -188,7 +184,8 @@ class Wall(pygame.sprite.Sprite):
         self.rect.x = x
         self.rect.y = y
         self.destructible = False
-        
+ 
+#Class used for the background     
 class Background(pygame.sprite.Sprite):
     
     def __init__(self,x,y,image):
@@ -504,21 +501,21 @@ class Player(pygame.sprite.Sprite):
             
 class Mob(pygame.sprite.Sprite):
     def __init__(self,x,y,hitpoint, game):
-        self.left1 = pygame.image.load("mob/0.png")
-        self.left2 = pygame.image.load("mob/1.png")
-        self.down1 = pygame.image.load("mob/2.png")
-        self.down2 = pygame.image.load("mob/3.png")
-        self.right1 = pygame.image.load("mob/4.png")
-        self.right2 = pygame.image.load("mob/5.png")
-        self.up1 = pygame.image.load("mob/6.png")
-        self.up2 = pygame.image.load("mob/7.png")
+        self.left1 = pygame.image.load("mob/skell/q/1.png")
+        self.left2 = pygame.image.load("mob/skell/q/2.png")
+        self.down1 = pygame.image.load("mob/skell/s/1.png")
+        self.down2 = pygame.image.load("mob/skell/s/2.png")
+        self.right1 = pygame.image.load("mob/skell/d/1.png")
+        self.right2 = pygame.image.load("mob/skell/d/2.png")
+        self.up1 = pygame.image.load("mob/skell/z/1.png")
+        self.up2 = pygame.image.load("mob/skell/z/2.png")
         self.left_walk = [self.left1,self.left2]
         self.right_walk = [self.right1, self.right2]
         self.up_walk = [self.up1, self.up2]
         self.down_walk = [self.down1, self.down2]
         pygame.sprite.Sprite.__init__(self)
         self.rect = pygame.Rect(0,0,48,48)
-        self.image = pygame.image.load("mob/0.png")
+        self.image = pygame.image.load("mob/skell/s/1.png")
         self.rect.x = x
         self.rect.y = y
         self.ticker = 0
@@ -638,8 +635,8 @@ class MobProjectile(pygame.sprite.Sprite):
             self.image = pygame.image.load("mob/fireball/1.png")
             self.image = pygame.transform.scale(self.image, (10, 30))
         self.rect = self.image.get_rect()
-        self.rect.x = x
-        self.rect.y = y
+        self.rect.x = int(x)
+        self.rect.y = int(y)
         
     def update(self):
         if self.direction == "right":
