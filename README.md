@@ -5,9 +5,9 @@ Installer pygame-menu avec la commande suivante :
 Tester de préférence la carte "Village"
 
 les commandes sont :
-z : haut
-s : bas 
-q : gauche
-d: droite
-espace : attaque
-echap : retour menu
+Z : Haut,
+S : Bas, 
+Q : Gauche,
+D: Droite,
+ESPACE : Attaque,
+ECHAP : Retour menu
