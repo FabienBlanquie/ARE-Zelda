@@ -17,12 +17,11 @@ FPS = 60  # This variable will define how many frames we update per second.
 current_map = []
 player_starting_position = [[0,0]]
 
-BLACK = (0, 0, 0)
+#BLACK = (0, 0, 0)
 
-clock = pygame.time.Clock()
-rect = pygame.Rect((0, 0), (32, 32))  # First tuple is position, second is size.
-image = pygame.Surface((32, 32))  # The tuple represent size.
-#image.fill(WHITE)  # We fill our surface with a nice white color (by default black).
+#clock = pygame.time.Clock()
+#rect = pygame.Rect((0, 0), (32, 32))  # First tuple is position, second is size.
+#image = pygame.Surface((32, 32))  # The tuple represent size.
 
 BushImg = pygame.image.load("overworld/bush.png")
 BushImg = pygame.transform.scale(BushImg, (55, 55))
@@ -34,7 +33,6 @@ DoorImg = pygame.image.load("overworld/door.png")
 DoorImg = pygame.transform.scale(DoorImg, (55, 55))
 
 class SettingsObject:
-    
       def __init__(self, width, height):
           self.width = width
           self.height = height
@@ -74,12 +72,10 @@ def get_level_list():
     level_list = []
     for x in name_list:
         name = x.split('.')[0]
-        level = (name,i) 
-        level_list.append(level)
-        i = i + 1
-    print(level_list)
-    sorted(level_list)
-    print(level_list)
+        level = (name) 
+        level_list.append([level])
+        i = i + 1    
+    level_list.sort()
     return level_list
 
 def get_plate_walk_right():
@@ -136,15 +132,17 @@ def menu():
         settings_menu.add_text_input(f"{attr} : ", default= value)
     settings_menu.add_button('Back', pygame_menu.events.BACK)
     
+    #custom submenu
+    custom_menu = pygame_menu.Menu(settings.height, settings.width, 'Settings', theme=pygame_menu.themes.THEME_DARK)
+    #custom_menu.add_text_input('Name :', default='John Doe', textinput_id = "username" )
+    custom_menu.add_selector('Level Selection :', level_list, selector_id = "map")
+    custom_menu.add_button('Play', custom_game, custom_menu)
+    custom_menu.add_button('Back', pygame_menu.events.BACK)
+
     #new game submenu
     newgame_menu = pygame_menu.Menu(settings.height, settings.width, 'Settings', theme=pygame_menu.themes.THEME_DARK)
-    #newgame_menu.add_text_input('Name :', default='John Doe', onchange= set_username,)
     newgame_menu.add_text_input('Name :', default='John Doe', textinput_id = "username" )
-    #newgame_menu.add_selector('Level Selection :', level_list, onchange=set_map)
-    #newgame_menu.add_selector('Level Selection :', level_list, selector_id = "aaa")
     newgame_menu.add_button('Play', start_playing, newgame_menu)
-    #newgame_menu.add_button('print_value', get_data, newgame_menu, "username")
-
     newgame_menu.add_button('Back', pygame_menu.events.BACK)
 
     #load game submenu
@@ -155,6 +153,7 @@ def menu():
     menu = pygame_menu.Menu(settings.height, settings.width, 'Souls', theme=pygame_menu.themes.THEME_DARK)
     menu.add_button('New Game', newgame_menu)
     menu.add_button('Load Game', loadgame_menu)
+    menu.add_button('Custom Game', custom_menu)
     menu.add_button('High Score', score_menu)
     menu.add_button('Settings', settings_menu)
     menu.add_button('Quit', pygame_menu.events.EXIT)
@@ -170,7 +169,16 @@ def get_data(menu, value):
     return data[value]
 
 #Select map to play    
-def set_map(value, map):
+def set_map2(value, map):
+    global current_map
+    current_map = []
+    filename = f"map/{value[0]}.csv"
+    matrice = decode_csv(filename)
+    for line in matrice:
+        current_map.append(line)
+        
+#Select map to play    
+def set_map(value):
     global current_map
     current_map = []
     filename = f"map/{value[0]}.csv"
@@ -216,8 +224,14 @@ class World(object):
         self.mobs_list = pygame.sprite.Group()
         self.arrows = pygame.sprite.Group()
         
-def start_playing(newgame_menu):
-    create_new_user(newgame_menu)
+        
+def custom_game(menu):
+    set_map(get_data(menu, "map"))
+    LoadedWorld()
+    GameMain().main_loop()
+        
+def start_playing(menu):
+    create_new_user(menu)
     LoadedWorld()
     GameMain().main_loop()
     
@@ -247,8 +261,6 @@ def map_convertor(matrice, game):
                 mob_map.append(Boss(value_index*55, row_index*55, 50, game))
             if value == 0:
                 player_starting_position[0] = Player(value_index*55, row_index*55,"UP",False,False,False,False,False)
-
-                #player_starting_position.append(Player(value_index*55, row_index*55,"UP",False,False,False,False,False))
             value_index = value_index + 1
         row_index = row_index + 1
     return object_map, mob_map
