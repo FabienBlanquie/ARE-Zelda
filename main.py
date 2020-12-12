@@ -12,16 +12,9 @@ import os
 import json
 import random
 
-FPS = 60  # This variable will define how many frames we update per second.
-
 current_map = []
+current_username = ""
 player_starting_position = [[0,0]]
-
-#BLACK = (0, 0, 0)
-
-#clock = pygame.time.Clock()
-#rect = pygame.Rect((0, 0), (32, 32))  # First tuple is position, second is size.
-#image = pygame.Surface((32, 32))  # The tuple represent size.
 
 BushImg = pygame.image.load("overworld/bush.png")
 BushImg = pygame.transform.scale(BushImg, (55, 55))
@@ -52,6 +45,11 @@ def decode_score():
         score_data = json.load(read_file)
         return score_data["Score"]
     
+def decode_save(name):
+    with open(f"save/{name}.json", "r") as read_file:
+        save_data = json.load(read_file)
+        return save_data["player"]
+    
 #Decode the csv file
 def decode_csv(fileName):
     initial_matrice = []
@@ -68,15 +66,23 @@ def decode_csv(fileName):
 
 def get_level_list():
     name_list = os.listdir('map')
-    i = 1
     level_list = []
     for x in name_list:
         name = x.split('.')[0]
         level = (name) 
         level_list.append([level])
-        i = i + 1    
     level_list.sort()
     return level_list
+
+def get_save_list():
+    name_list = os.listdir('save')
+    save_list = []
+    for x in name_list:
+        name = x.split('.')[0]
+        username = (name) 
+        save_list.append([username])
+    save_list.sort()
+    return save_list
 
 def get_plate_walk_right():
     name_list = os.listdir('player/plate/walk/d')
@@ -142,11 +148,13 @@ def menu():
     #new game submenu
     newgame_menu = pygame_menu.Menu(settings.height, settings.width, 'Settings', theme=pygame_menu.themes.THEME_DARK)
     newgame_menu.add_text_input('Name :', default='John Doe', textinput_id = "username" )
-    newgame_menu.add_button('Play', start_playing, newgame_menu)
+    newgame_menu.add_button('Play', new_game, newgame_menu)
     newgame_menu.add_button('Back', pygame_menu.events.BACK)
 
     #load game submenu
     loadgame_menu = pygame_menu.Menu(settings.height, settings.width, 'Settings', theme=pygame_menu.themes.THEME_DARK)
+    loadgame_menu.add_selector('User Selection :', save_list, selector_id = "save")
+    loadgame_menu.add_button('Play', load_game, loadgame_menu)
     loadgame_menu.add_button('Back', pygame_menu.events.BACK)
     
     #main menu
@@ -167,15 +175,6 @@ def apply_settings(value):
 def get_data(menu, value):
     data = menu.get_input_data()
     return data[value]
-
-#Select map to play    
-def set_map2(value, map):
-    global current_map
-    current_map = []
-    filename = f"map/{value[0]}.csv"
-    matrice = decode_csv(filename)
-    for line in matrice:
-        current_map.append(line)
         
 #Select map to play    
 def set_map(value):
@@ -224,20 +223,39 @@ class World(object):
         self.mobs_list = pygame.sprite.Group()
         self.arrows = pygame.sprite.Group()
         
-        
 def custom_game(menu):
     set_map(get_data(menu, "map"))
     LoadedWorld()
     GameMain().main_loop()
         
-def start_playing(menu):
+def new_game(menu):
     create_new_user(menu)
+    global current_username
+    current_username = get_data(menu, "username")
+    first_map(level_list)
+    LoadedWorld()
+    GameMain().main_loop()
+    
+def load_game(menu):
+    global current_username
+    current_username = get_data(menu, "save")[0]
+    user = decode_save(current_username)
+    #set_map need a slice, so we create one
+    user_map = (user[0]["current_level"],0)
+    set_map(user_map)
     LoadedWorld()
     GameMain().main_loop()
     
 def create_new_user(newgame_menu):
     name = get_data(newgame_menu, "username")
-    print(name)
+    data = {}
+    data['player'] = []
+    data['player'].append({
+    'username': name,
+    'current_level': level_list[0][0]
+    })
+    with open(f'save/{name}.json', 'w+') as f:
+        json.dump(data, f)
 
 def map_convertor(matrice, game):
     object_map = []
@@ -813,7 +831,7 @@ def program_logic():
     
 score_data = decode_score()
 level_list = get_level_list()
-first_map(level_list)
+save_list = get_save_list()
 settings = settings_logic()
 gameDisplay = pygame.display.set_mode((settings.width, settings.height)) 
 program_logic()
