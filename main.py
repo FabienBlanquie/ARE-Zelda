@@ -140,7 +140,6 @@ def menu():
     
     #custom submenu
     custom_menu = pygame_menu.Menu(settings.height, settings.width, 'Settings', theme=pygame_menu.themes.THEME_DARK)
-    #custom_menu.add_text_input('Name :', default='John Doe', textinput_id = "username" )
     custom_menu.add_selector('Level Selection :', level_list, selector_id = "map")
     custom_menu.add_button('Play', custom_game, custom_menu)
     custom_menu.add_button('Back', pygame_menu.events.BACK)
