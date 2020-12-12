@@ -18,15 +18,11 @@ current_map = []
 player_starting_position = [[0,0]]
 
 BLACK = (0, 0, 0)
-WHITE = (255, 255, 255)
-RED = (255, 0, 0)
-GREEN = (0, 255, 0)
-BLUE = (0, 0, 255)
 
 clock = pygame.time.Clock()
 rect = pygame.Rect((0, 0), (32, 32))  # First tuple is position, second is size.
 image = pygame.Surface((32, 32))  # The tuple represent size.
-image.fill(WHITE)  # We fill our surface with a nice white color (by default black).
+#image.fill(WHITE)  # We fill our surface with a nice white color (by default black).
 
 BushImg = pygame.image.load("overworld/bush.png")
 BushImg = pygame.transform.scale(BushImg, (55, 55))
@@ -80,7 +76,10 @@ def get_level_list():
         name = x.split('.')[0]
         level = (name,i) 
         level_list.append(level)
-        i = i + 1    
+        i = i + 1
+    print(level_list)
+    sorted(level_list)
+    print(level_list)
     return level_list
 
 def get_plate_walk_right():
@@ -124,6 +123,7 @@ def get_plate_walk_down():
     return walk_cycle_down
             
 def menu():
+    
     #score submenu
     score_menu = pygame_menu.Menu(settings.height, settings.width, 'Score', theme=pygame_menu.themes.THEME_DARK)
     for data in score_data:
@@ -138,9 +138,13 @@ def menu():
     
     #new game submenu
     newgame_menu = pygame_menu.Menu(settings.height, settings.width, 'Settings', theme=pygame_menu.themes.THEME_DARK)
-    newgame_menu.add_text_input('Name :', default='John Doe', onchange= set_username,)
-    newgame_menu.add_selector('Level Selection :', level_list, onchange=set_map)
-    newgame_menu.add_button('Play', start_playing)
+    #newgame_menu.add_text_input('Name :', default='John Doe', onchange= set_username,)
+    newgame_menu.add_text_input('Name :', default='John Doe', textinput_id = "username" )
+    #newgame_menu.add_selector('Level Selection :', level_list, onchange=set_map)
+    #newgame_menu.add_selector('Level Selection :', level_list, selector_id = "aaa")
+    newgame_menu.add_button('Play', start_playing, newgame_menu)
+    #newgame_menu.add_button('print_value', get_data, newgame_menu, "username")
+
     newgame_menu.add_button('Back', pygame_menu.events.BACK)
 
     #load game submenu
@@ -155,11 +159,15 @@ def menu():
     menu.add_button('Settings', settings_menu)
     menu.add_button('Quit', pygame_menu.events.EXIT)
     menu.mainloop(gameDisplay)
-    
+
 #TODO
 def apply_settings(value):
     print(value)
     pass    
+    
+def get_data(menu, value):
+    data = menu.get_input_data()
+    return data[value]
 
 #Select map to play    
 def set_map(value, map):
@@ -178,11 +186,6 @@ def first_map(level_list):
     matrice = decode_csv(filename)
     for line in matrice:
         current_map.append(line)
-
-#TODO
-def set_username(value):
-    print(value)
-    pass
 
 #Class used for the walls
 class Wall(pygame.sprite.Sprite):
@@ -213,9 +216,14 @@ class World(object):
         self.mobs_list = pygame.sprite.Group()
         self.arrows = pygame.sprite.Group()
         
-def start_playing(): 
+def start_playing(newgame_menu):
+    create_new_user(newgame_menu)
     LoadedWorld()
     GameMain().main_loop()
+    
+def create_new_user(newgame_menu):
+    name = get_data(newgame_menu, "username")
+    print(name)
 
 def map_convertor(matrice, game):
     object_map = []
