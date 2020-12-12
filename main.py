@@ -15,7 +15,7 @@ import random
 FPS = 60  # This variable will define how many frames we update per second.
 
 current_map = []
-player_starting_position = []
+player_starting_position = [[0,0]]
 
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
@@ -136,11 +136,21 @@ def menu():
         settings_menu.add_text_input(f"{attr} : ", default= value)
     settings_menu.add_button('Back', pygame_menu.events.BACK)
     
+    #new game submenu
+    newgame_menu = pygame_menu.Menu(settings.height, settings.width, 'Settings', theme=pygame_menu.themes.THEME_DARK)
+    newgame_menu.add_text_input('Name :', default='John Doe', onchange= set_username,)
+    newgame_menu.add_selector('Level Selection :', level_list, onchange=set_map)
+    newgame_menu.add_button('Play', start_playing)
+    newgame_menu.add_button('Back', pygame_menu.events.BACK)
+
+    #load game submenu
+    loadgame_menu = pygame_menu.Menu(settings.height, settings.width, 'Settings', theme=pygame_menu.themes.THEME_DARK)
+    loadgame_menu.add_button('Back', pygame_menu.events.BACK)
+    
     #main menu
     menu = pygame_menu.Menu(settings.height, settings.width, 'Souls', theme=pygame_menu.themes.THEME_DARK)
-    menu.add_text_input('Name :', default='John Doe', onchange= set_username,)
-    menu.add_selector('Level Selection :', level_list, onchange=set_map)
-    menu.add_button('Play', start_playing)
+    menu.add_button('New Game', newgame_menu)
+    menu.add_button('Load Game', loadgame_menu)
     menu.add_button('High Score', score_menu)
     menu.add_button('Settings', settings_menu)
     menu.add_button('Quit', pygame_menu.events.EXIT)
@@ -226,9 +236,11 @@ def map_convertor(matrice, game):
             if value == 22:
                 mob_map.append(Mob(value_index*55, row_index*55, 3, game))
             if value == 55:
-                mob_map.append(Boss(value_index*55, row_index*55, 200, game))
+                mob_map.append(Boss(value_index*55, row_index*55, 50, game))
             if value == 0:
-                player_starting_position.append(Player(value_index*55, row_index*55,"UP",False,False,False,False,False))
+                player_starting_position[0] = Player(value_index*55, row_index*55,"UP",False,False,False,False,False)
+
+                #player_starting_position.append(Player(value_index*55, row_index*55,"UP",False,False,False,False,False))
             value_index = value_index + 1
         row_index = row_index + 1
     return object_map, mob_map
