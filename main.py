@@ -55,8 +55,8 @@ def decode_csv(fileName):
     initial_matrice = []
     with open(fileName, "r") as file:
         #take out the first line
-        first_line = file.readline()
-        first_line.replace('\n', '').split(",")
+        #first_line = file.readline()
+        #first_line.replace('\n', '').split(",")
         for line in file :
             data = line.replace('\n', '').split(",")
             data = [int(i) for i in data]
@@ -136,6 +136,13 @@ def menu():
     settings_menu = pygame_menu.Menu(settings.height, settings.width, 'Settings', theme=pygame_menu.themes.THEME_DARK)
     for attr, value in settings.__dict__.items():
         settings_menu.add_text_input(f"{attr} : ", default= value)
+    settings_menu.add_label("z : up")
+    settings_menu.add_label("s : down")
+    settings_menu.add_label("q : left")
+    settings_menu.add_label("d : right")
+    settings_menu.add_label("spacebar : attack")
+    #settings_menu.add_button('Apply', apply_settings)
+    #settings_menu.add_label("restart the game to apply the settings")
     settings_menu.add_button('Back', pygame_menu.events.BACK)
     
     #custom submenu
@@ -170,6 +177,7 @@ def menu():
 def apply_settings(value):
     print(value)
     pass    
+
     
 def get_data(menu, value):
     data = menu.get_input_data()
@@ -245,6 +253,15 @@ def load_game(menu):
     LoadedWorld()
     GameMain().main_loop()
     
+def next_level():
+    global current_username
+    user = decode_save(current_username)
+    user_map = (user[0]["current_level"],0)
+
+    set_map(user_map)
+    LoadedWorld()
+    GameMain().main_loop()
+    
 def create_new_user(newgame_menu):
     name = get_data(newgame_menu, "username")
     data = {}
@@ -312,6 +329,7 @@ class GameMain():
         self.player.walls = self.rooms[self.current_y][self.current_x].wall_list
         self.player.mobs = self.rooms[self.current_y][self.current_x].mobs_list
         self.screen = pygame.display.set_mode((self.width, self.height))
+        #self.end_of_level
         pygame.mixer.pre_init(44100, -16, 2, 2048)
         pygame.init()
         
@@ -321,6 +339,7 @@ class GameMain():
             self.clock.tick(60)
             self.player.mobs.update()
             self.handle_events()
+            self.end_of_level()
             self.current_room.arrows.update()
             self.all_sprite_list.update()
             arrow_hit_list = self.current_room.arrows
@@ -338,7 +357,11 @@ class GameMain():
         self.current_room.wall_list.draw(self.screen)
         self.current_room.arrows.draw(self.screen)
         self.current_room.mobs_list.draw(self.screen)
-        pygame.display.flip()  
+        pygame.display.flip()
+        
+    def end_of_level(self):
+        if not self.current_room.mobs_list:
+            self.done = True
                   
     def handle_events(self):
         for event in pygame.event.get():
@@ -830,6 +853,10 @@ def program_logic():
     
 score_data = decode_score()
 level_list = get_level_list()
+#print(level_list[2][0])
+#print(level_list[0].index("[02]"))
+print([(i, el.index("03")) for i, el in enumerate(level_list) if "03" in el])
+
 save_list = get_save_list()
 settings = settings_logic()
 gameDisplay = pygame.display.set_mode((settings.width, settings.height)) 
