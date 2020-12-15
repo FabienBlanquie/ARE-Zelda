@@ -13,6 +13,7 @@ import json
 import random
 
 current_map = []
+current_level = ""
 current_username = ""
 player_starting_position = [[0,0]]
 
@@ -54,9 +55,6 @@ def decode_save(name):
 def decode_csv(fileName):
     initial_matrice = []
     with open(fileName, "r") as file:
-        #take out the first line
-        #first_line = file.readline()
-        #first_line.replace('\n', '').split(",")
         for line in file :
             data = line.replace('\n', '').split(",")
             data = [int(i) for i in data]
@@ -167,17 +165,15 @@ def menu():
     menu = pygame_menu.Menu(settings.height, settings.width, 'Souls', theme=pygame_menu.themes.THEME_DARK)
     menu.add_button('New Game', newgame_menu)
     menu.add_button('Load Game', loadgame_menu)
-    menu.add_button('Custom Game', custom_menu)
+    #menu.add_button('Custom Game', custom_menu)
     menu.add_button('High Score', score_menu)
     menu.add_button('Settings', settings_menu)
     menu.add_button('Quit', pygame_menu.events.EXIT)
     menu.mainloop(gameDisplay)
 
-#TODO
 def apply_settings(value):
     print(value)
     pass    
-
     
 def get_data(menu, value):
     data = menu.get_input_data()
@@ -187,6 +183,8 @@ def get_data(menu, value):
 def set_map(value):
     global current_map
     current_map = []
+    global current_level
+    current_level = value[0]
     filename = f"map/{value[0]}.csv"
     matrice = decode_csv(filename)
     for line in matrice:
@@ -196,6 +194,8 @@ def set_map(value):
 def first_map(level_list):
     global current_map
     current_map = []
+    global current_level
+    current_level = level_list[0][0]
     filename = f"map/{level_list[0][0]}.csv"
     matrice = decode_csv(filename)
     for line in matrice:
@@ -243,6 +243,17 @@ def new_game(menu):
     LoadedWorld()
     GameMain().main_loop()
     
+def create_new_user(newgame_menu):
+    name = get_data(newgame_menu, "username")
+    data = {}
+    data['player'] = []
+    data['player'].append({
+    'username': name,
+    'current_level': level_list[0][0]
+    })
+    with open(f'save/{name}.json', 'w+') as f:
+        json.dump(data, f)
+    
 def load_game(menu):
     global current_username
     current_username = get_data(menu, "save")[0]
@@ -254,23 +265,24 @@ def load_game(menu):
     GameMain().main_loop()
     
 def next_level():
-    global current_username
     user = decode_save(current_username)
     user_map = (user[0]["current_level"],0)
-
-    set_map(user_map)
+    next_map = flat_list.index(user_map[0])
+    next_map = next_map + 1
+    next_map2 = (flat_list[next_map],0)
+    set_map(next_map2)
+    update_user_next_level(flat_list[next_map])
     LoadedWorld()
     GameMain().main_loop()
     
-def create_new_user(newgame_menu):
-    name = get_data(newgame_menu, "username")
+def update_user_next_level(level):
     data = {}
     data['player'] = []
     data['player'].append({
-    'username': name,
-    'current_level': level_list[0][0]
+    'username': current_username,
+    'current_level': level
     })
-    with open(f'save/{name}.json', 'w+') as f:
+    with open(f'save/{current_username}.json', 'w+') as f:
         json.dump(data, f)
 
 def map_convertor(matrice, game):
@@ -329,7 +341,6 @@ class GameMain():
         self.player.walls = self.rooms[self.current_y][self.current_x].wall_list
         self.player.mobs = self.rooms[self.current_y][self.current_x].mobs_list
         self.screen = pygame.display.set_mode((self.width, self.height))
-        #self.end_of_level
         pygame.mixer.pre_init(44100, -16, 2, 2048)
         pygame.init()
         
@@ -360,7 +371,12 @@ class GameMain():
         pygame.display.flip()
         
     def end_of_level(self):
-        if not self.current_room.mobs_list:
+        #when all the monster are killed and we haven't finished the game yet, start the next level
+        if not self.current_room.mobs_list and (flat_list.index(current_level) != (len(flat_list)-1)):
+            self.done = True
+            next_level()
+        #if we have killed all the monster and reached the last level, return to the main screen
+        if not self.current_room.mobs_list and (flat_list.index(current_level) == (len(flat_list)-1)):
             self.done = True
                   
     def handle_events(self):
@@ -851,12 +867,16 @@ def program_logic():
     pygame.init()
     menu()
     
+def flattened_list(mylist):
+    flat_list = []
+    for sublist in mylist:
+        for item in sublist:
+            flat_list.append(item)
+    return flat_list
+    
 score_data = decode_score()
 level_list = get_level_list()
-#print(level_list[2][0])
-#print(level_list[0].index("[02]"))
-print([(i, el.index("03")) for i, el in enumerate(level_list) if "03" in el])
-
+flat_list = flattened_list(level_list)
 save_list = get_save_list()
 settings = settings_logic()
 gameDisplay = pygame.display.set_mode((settings.width, settings.height)) 
