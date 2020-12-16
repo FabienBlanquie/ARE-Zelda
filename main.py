@@ -14,12 +14,14 @@ import random
 
 #contain the list of all users saves
 save_list = []
+#contain user data
+data_list = []
 #contain current map matrix
 current_map = []
 #contain current level name
 current_level = ""
 #contain current username
-current_username = ""
+current_username = "John Doe"
 #initial valu of the player starting position
 player_starting_position = [[0,0]]
 
@@ -43,21 +45,25 @@ def settings_logic():
     settings = SettingsObject(settings_data["width"],settings_data["height"])
     return settings
 
-#TODO
-def apply_settings(value):
-    print(value)
-    pass  
-
+ 
 ###############################################################################
 '''
 Score part
 '''
-
-def decode_score():
-    with open("misc/score.json", "r") as read_file:
-        score_data = json.load(read_file)
-        return score_data["Score"]
+        
+def decode_user_json(name):
+    with open(f"save/{name[0]}.json", "r") as read_file:
+        user_data = json.load(read_file)
+        return user_data["player"]
     
+def get_data_list():
+    global data_list
+    data_list = []
+    for user in save_list:
+        data = decode_user_json(user)
+        data_list.append(data)
+    return data_list
+        
 ###############################################################################
 '''
 User part
@@ -99,17 +105,6 @@ def update_user_next_level(level):
     })
     with open(f'save/{current_username}.json', 'w+') as f:
         json.dump(data, f)
-        
-def load_game(menu):
-    get_save_list()
-    global current_username
-    current_username = get_data(menu, "save")[0]
-    user = decode_save(current_username)
-    #set_map need a slice, so we create one
-    user_map = (user[0]["current_level"],0)
-    set_map(user_map)
-    LoadedWorld()
-    GameMain().main_loop()
     
 ###############################################################################
 '''
@@ -215,8 +210,10 @@ def menu():
     
     #score submenu
     score_menu = pygame_menu.Menu(settings.height, settings.width, 'Score', theme=pygame_menu.themes.THEME_DARK)
-    for data in score_data:
-        score_menu.add_label(data)
+    for data in data_list:
+        username = data[0]["username"]
+        level = data[0]["current_level"]
+        score_menu.add_label(f"{username} Level : {level}")
     score_menu.add_button('Back', pygame_menu.events.BACK)
     
     #settings submenu
@@ -252,8 +249,8 @@ def menu():
     menu = pygame_menu.Menu(settings.height, settings.width, 'Souls', theme=pygame_menu.themes.THEME_DARK)
     menu.add_button('New Game', newgame_menu)
     menu.add_button('Load Game', loadgame_menu)
-    #menu.add_button('Custom Game', custom_menu)
-    #menu.add_button('High Score', score_menu)
+    menu.add_button('Custom Game', custom_menu)
+    menu.add_button('High Score', score_menu)
     menu.add_button('Settings', settings_menu)
     menu.add_button('Quit', pygame_menu.events.EXIT)
     menu.mainloop(gameDisplay)
@@ -262,17 +259,27 @@ def menu():
 def get_data(menu, value):
     data = menu.get_input_data()
     return data[value]
-
-def custom_game(menu):
-    set_map(get_data(menu, "map"))
-    LoadedWorld()
-    GameMain().main_loop()
         
 def new_game(menu):
     create_new_user(menu)
     global current_username
     current_username = get_data(menu, "username")
     first_map(level_list)
+    LoadedWorld()
+    GameMain().main_loop()
+          
+def load_game(menu):
+    global current_username
+    current_username = get_data(menu, "save")[0]
+    user = decode_save(current_username)
+    #set_map need a slice, so we create one
+    user_map = (user[0]["current_level"],0)
+    set_map(user_map)
+    LoadedWorld()
+    GameMain().main_loop()
+    
+def custom_game(menu):
+    set_map(get_data(menu, "map"))
     LoadedWorld()
     GameMain().main_loop()
     
@@ -372,6 +379,7 @@ class GameMain():
                 if event.key == pygame.K_ESCAPE:
                     self.done = True
                     get_save_list()
+                    get_data_list()
                     menu()
                 elif event.key == pygame.K_z:
                     self.player.upKeyPressed = True
@@ -428,7 +436,7 @@ class GameMain():
                         self.player.leftKeyPressed = False
                         self.player.rightKeyPressed = False
                     self.player.action = 'attacking'
-                        
+            #action when the player keys is released            
             elif event.type == pygame.KEYUP:
                 if event.key == pygame.K_z:
                     self.player.upKeyPressed = False
@@ -574,24 +582,28 @@ class Player(pygame.sprite.Sprite):
 #class used to define the mob attribute          
 class Mob(pygame.sprite.Sprite):
     def __init__(self,x,y,hitpoint, game):
+        #left animation walkcycle
         self.left1 = pygame.image.load("mob/skell/q/1.png")
         self.left2 = pygame.image.load("mob/skell/q/2.png")
+        self.left_walk = [self.left1,self.left2]
+        #down animation walkcycle
         self.down1 = pygame.image.load("mob/skell/s/1.png")
         self.down2 = pygame.image.load("mob/skell/s/2.png")
+        self.down_walk = [self.down1, self.down2]
+        #right animation walkcycle
         self.right1 = pygame.image.load("mob/skell/d/1.png")
         self.right2 = pygame.image.load("mob/skell/d/2.png")
+        self.right_walk = [self.right1, self.right2]
+        #up animation walkcycle
         self.up1 = pygame.image.load("mob/skell/z/1.png")
         self.up2 = pygame.image.load("mob/skell/z/2.png")
-        self.left_walk = [self.left1,self.left2]
-        self.right_walk = [self.right1, self.right2]
         self.up_walk = [self.up1, self.up2]
-        self.down_walk = [self.down1, self.down2]
+
         pygame.sprite.Sprite.__init__(self)
         self.rect = pygame.Rect(0,0,48,48)
         self.image = pygame.image.load("mob/skell/s/1.png")
         self.rect.x = x
         self.rect.y = y
-        self.ticker = 0
         self.current_frame = 0
         self.walk_anim_frame = 0
         self.hitpoint = hitpoint
@@ -603,7 +615,6 @@ class Mob(pygame.sprite.Sprite):
         self.randomDirections = ["up", "down","left","right"]
         self.randomnumber = random.randint(0,3)
         self.direction = self.randomDirections[self.randomnumber]
-        self.die = [self.down1,self.down1,self.down1]
         self.walls = None
         self.doors = None
         self.game = game
@@ -677,16 +688,7 @@ class Mob(pygame.sprite.Sprite):
                 self.direction = self.randomDirections[random.randint(0,3)]
                 self.t = 0  
         if self.hitpoint <= 0:
-            self.projectile_t = -1
-            self.x_change = 0
-            self.y_change = 0
-            self.rect.y = self.rect.y
-            self.image = self.die[self.current_frame]
-            self.ticker += 1
-            if self.ticker % 15 == 0:
-                self.current_frame = (self.current_frame + 1) % 3
-            if self.image == self.die[2]:
-                self.kill()     
+            self.kill()     
         self.anim_ticker += 1
         if self.anim_ticker % 10 == 0:
             self.walk_anim_frame = (self.walk_anim_frame + 1) % 2
@@ -725,24 +727,27 @@ class MobProjectile(pygame.sprite.Sprite):
 #class used to define the boss attribute        
 class Boss(pygame.sprite.Sprite):
     def __init__(self,x,y,hitpoint, game):
+        #left animation walkcycle
         self.left1 = pygame.image.load("mob/boss/q/1.png")
         self.left2 = pygame.image.load("mob/boss/q/2.png")
+        self.left_walk = [self.left1,self.left2]
+        #down animation walkcycle
         self.down1 = pygame.image.load("mob/boss/s/1.png")
         self.down2 = pygame.image.load("mob/boss/s/2.png")
+        self.down_walk = [self.down1, self.down2]
+        #right animation walkcycle
         self.right1 = pygame.image.load("mob/boss/d/1.png")
         self.right2 = pygame.image.load("mob/boss/d/2.png")
+        self.right_walk = [self.right1, self.right2]
+        #up animation walkcycle
         self.up1 = pygame.image.load("mob/boss/z/1.png")
         self.up2 = pygame.image.load("mob/boss/z/2.png")
-        self.left_walk = [self.left1,self.left2]
-        self.right_walk = [self.right1, self.right2]
         self.up_walk = [self.up1, self.up2]
-        self.down_walk = [self.down1, self.down2]
         pygame.sprite.Sprite.__init__(self)
         self.image = pygame.image.load("mob/boss/d/1.png")
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
-        self.ticker = 0
         self.current_frame = 0
         self.walk_anim_frame = 0
         self.hitpoint = hitpoint
@@ -754,7 +759,6 @@ class Boss(pygame.sprite.Sprite):
         self.randomDirections = ["up", "down","left","right"]
         self.randomnumber = random.randint(0,3)
         self.direction = self.randomDirections[self.randomnumber]
-        self.die = [self.down1,self.down1,self.down1]
         self.walls = None
         self.doors = None
         self.game = game
@@ -836,16 +840,7 @@ class Boss(pygame.sprite.Sprite):
                 self.direction = self.randomDirections[random.randint(0,3)]
                 self.t = 0  
         if self.hitpoint <= 0:
-            self.projectile_t = -1
-            self.x_change = 0
-            self.y_change = 0
-            self.rect.y = self.rect.y
-            self.image = self.die[self.current_frame]
-            self.ticker += 1
-            if self.ticker % 15 == 0:
-                self.current_frame = (self.current_frame + 1) % 3
-            if self.image == self.die[2]:
-                self.kill()     
+            self.kill()     
         self.anim_ticker += 1
         if self.anim_ticker % 10 == 0:
             self.walk_anim_frame = (self.walk_anim_frame + 1) % 2
@@ -909,10 +904,10 @@ def flattened_list(mylist):
             flat_list.append(item)
     return flat_list
     
-score_data = decode_score()
 level_list = get_level_list()
 flat_list = flattened_list(level_list)
 get_save_list()
+get_data_list()
 settings = settings_logic()
 gameDisplay = pygame.display.set_mode((settings.width, settings.height)) 
 program_logic()
