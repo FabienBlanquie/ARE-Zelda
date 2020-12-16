@@ -12,20 +12,18 @@ import os
 import json
 import random
 
+#contain the list of all users saves
 save_list = []
+#contain current map matrix
 current_map = []
+#contain current level name
 current_level = ""
+#contain current username
 current_username = ""
+#initial valu of the player starting position
 player_starting_position = [[0,0]]
 
-BushImg = pygame.image.load("overworld/bush.png")
-BushImg = pygame.transform.scale(BushImg, (55, 55))
-StoneWallImg = pygame.image.load("overworld/wall.png")
-StoneWallImg = pygame.transform.scale(StoneWallImg, (55, 55))
-FireCampImg = pygame.image.load("overworld/firecamp.png")
-FireCampImg = pygame.transform.scale(FireCampImg, (55, 55))
-DoorImg = pygame.image.load("overworld/door.png")
-DoorImg = pygame.transform.scale(DoorImg, (55, 55))
+###############################################################################
 
 class SettingsObject:
       def __init__(self, width, height):
@@ -42,6 +40,12 @@ def settings_logic():
     settings = SettingsObject(settings_data["width"],settings_data["height"])
     return settings
 
+def apply_settings(value):
+    print(value)
+    pass  
+
+###############################################################################
+
 def decode_score():
     with open("misc/score.json", "r") as read_file:
         score_data = json.load(read_file)
@@ -54,14 +58,14 @@ def decode_save(name):
     
 #Decode the csv file
 def decode_csv(fileName):
-    initial_matrice = []
+    initial_matrix = []
     with open(fileName, "r") as file:
         for line in file :
             data = line.replace('\n', '').split(",")
             data = [int(i) for i in data]
-            initial_matrice.append(data)
+            initial_matrix.append(data)
     file.close
-    return initial_matrice
+    return initial_matrix
 
 def get_level_list():
     name_list = os.listdir('map')
@@ -84,6 +88,8 @@ def get_save_list():
     save_list.sort()
     return save_list
 
+###############################################################################
+    
 def get_plate_walk_right():
     name_list = os.listdir('player/plate/walk/d')
     i = 1
@@ -123,8 +129,13 @@ def get_plate_walk_down():
         walk_cycle_down.append(down)
         i = i + 1    
     return walk_cycle_down
+
+###############################################################################
             
 def menu():
+    '''
+    def containing the main menu and his submenu
+    '''
     
     #score submenu
     score_menu = pygame_menu.Menu(settings.height, settings.width, 'Score', theme=pygame_menu.themes.THEME_DARK)
@@ -141,8 +152,6 @@ def menu():
     settings_menu.add_label("q : left")
     settings_menu.add_label("d : right")
     settings_menu.add_label("spacebar : attack")
-    #settings_menu.add_button('Apply', apply_settings)
-    #settings_menu.add_label("restart the game to apply the settings")
     settings_menu.add_button('Back', pygame_menu.events.BACK)
     
     #custom submenu
@@ -154,7 +163,6 @@ def menu():
     #new game submenu
     newgame_menu = pygame_menu.Menu(settings.height, settings.width, 'Settings', theme=pygame_menu.themes.THEME_DARK)
     newgame_menu.add_text_input('Name :', default='John Doe', textinput_id = "username" )
-    newgame_menu.add_button('reset', pygame_menu.events.RESET)
     newgame_menu.add_button('Play', new_game, newgame_menu)
     newgame_menu.add_button('Back', pygame_menu.events.BACK)
 
@@ -173,10 +181,7 @@ def menu():
     menu.add_button('Settings', settings_menu)
     menu.add_button('Quit', pygame_menu.events.EXIT)
     menu.mainloop(gameDisplay)
-
-def apply_settings(value):
-    print(value)
-    pass    
+  
     
 def get_data(menu, value):
     data = menu.get_input_data()
@@ -189,8 +194,8 @@ def set_map(value):
     global current_level
     current_level = value[0]
     filename = f"map/{value[0]}.csv"
-    matrice = decode_csv(filename)
-    for line in matrice:
+    matrix = decode_csv(filename)
+    for line in matrix:
         current_map.append(line)
         
 #used as default value to prevent crash if the user tap "Play" without using the map selection
@@ -200,8 +205,8 @@ def first_map(level_list):
     global current_level
     current_level = level_list[0][0]
     filename = f"map/{level_list[0][0]}.csv"
-    matrice = decode_csv(filename)
-    for line in matrice:
+    matrix = decode_csv(filename)
+    for line in matrix:
         current_map.append(line)
 
 #Class used for the walls
@@ -290,12 +295,22 @@ def update_user_next_level(level):
     with open(f'save/{current_username}.json', 'w+') as f:
         json.dump(data, f)
 
-def map_convertor(matrice, game):
+def map_convertor(matrix, game):
     object_map = []
     mob_map = []
     row_index = 0
     value_index = 0
-    for row in matrice:
+    #Image asset resized 
+    BushImg = pygame.image.load("overworld/bush.png")
+    BushImg = pygame.transform.scale(BushImg, (55, 55))
+    StoneWallImg = pygame.image.load("overworld/wall.png")
+    StoneWallImg = pygame.transform.scale(StoneWallImg, (55, 55))
+    FireCampImg = pygame.image.load("overworld/firecamp.png")
+    FireCampImg = pygame.transform.scale(FireCampImg, (55, 55))
+    DoorImg = pygame.image.load("overworld/door.png")
+    DoorImg = pygame.transform.scale(DoorImg, (55, 55))
+    
+    for row in matrix:
         value_index = 0
         for value in row:
             if value == -1:
@@ -885,7 +900,6 @@ score_data = decode_score()
 level_list = get_level_list()
 flat_list = flattened_list(level_list)
 get_save_list()
-#save_list = get_save_list()
 settings = settings_logic()
 gameDisplay = pygame.display.set_mode((settings.width, settings.height)) 
 program_logic()
