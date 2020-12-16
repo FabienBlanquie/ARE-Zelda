@@ -24,6 +24,9 @@ current_username = ""
 player_starting_position = [[0,0]]
 
 ###############################################################################
+'''
+Settings part
+'''
 
 class SettingsObject:
       def __init__(self, width, height):
@@ -40,22 +43,79 @@ def settings_logic():
     settings = SettingsObject(settings_data["width"],settings_data["height"])
     return settings
 
+#TODO
 def apply_settings(value):
     print(value)
     pass  
 
 ###############################################################################
+'''
+Score part
+'''
 
 def decode_score():
     with open("misc/score.json", "r") as read_file:
         score_data = json.load(read_file)
         return score_data["Score"]
     
+###############################################################################
+'''
+User part
+'''
+    
 def decode_save(name):
     with open(f"save/{name}.json", "r") as read_file:
         save_data = json.load(read_file)
         return save_data["player"]
     
+def get_save_list():
+    global save_list
+    name_list = os.listdir('save')
+    save_list = []
+    for x in name_list:
+        name = x.split('.')[0]
+        username = (name) 
+        save_list.append([username])
+    save_list.sort()
+    return save_list
+
+def create_new_user(newgame_menu):
+    name = get_data(newgame_menu, "username")
+    data = {}
+    data['player'] = []
+    data['player'].append({
+    'username': name,
+    'current_level': level_list[0][0]
+    })
+    with open(f'save/{name}.json', 'w+') as f:
+        json.dump(data, f)
+        
+def update_user_next_level(level):
+    data = {}
+    data['player'] = []
+    data['player'].append({
+    'username': current_username,
+    'current_level': level
+    })
+    with open(f'save/{current_username}.json', 'w+') as f:
+        json.dump(data, f)
+        
+def load_game(menu):
+    get_save_list()
+    global current_username
+    current_username = get_data(menu, "save")[0]
+    user = decode_save(current_username)
+    #set_map need a slice, so we create one
+    user_map = (user[0]["current_level"],0)
+    set_map(user_map)
+    LoadedWorld()
+    GameMain().main_loop()
+    
+###############################################################################
+'''
+Level part
+'''
+
 #Decode the csv file
 def decode_csv(fileName):
     initial_matrix = []
@@ -77,59 +137,75 @@ def get_level_list():
     level_list.sort()
     return level_list
 
-def get_save_list():
-    global save_list
-    name_list = os.listdir('save')
-    save_list = []
-    for x in name_list:
-        name = x.split('.')[0]
-        username = (name) 
-        save_list.append([username])
-    save_list.sort()
-    return save_list
-
-###############################################################################
+#Select map to play    
+def set_map(value):
+    global current_map
+    current_map = []
+    global current_level
+    current_level = value[0]
+    filename = f"map/{value[0]}.csv"
+    matrix = decode_csv(filename)
+    for line in matrix:
+        current_map.append(line)
+        
+#used as default value to prevent crash if the user tap "Play" without using the map selection
+def first_map(level_list):
+    global current_map
+    current_map = []
+    global current_level
+    current_level = level_list[0][0]
+    filename = f"map/{level_list[0][0]}.csv"
+    matrix = decode_csv(filename)
+    for line in matrix:
+        current_map.append(line)
+        
+def next_level():
+    user = decode_save(current_username)
+    user_map = (user[0]["current_level"],0)
+    next_map = flat_list.index(user_map[0])
+    next_map = next_map + 1
+    next_map2 = (flat_list[next_map],0)
+    set_map(next_map2)
+    update_user_next_level(flat_list[next_map])
+    LoadedWorld()
+    GameMain().main_loop()
     
-def get_plate_walk_right():
-    name_list = os.listdir('player/plate/walk/d')
-    i = 1
-    walk_cycle_right = []
-    for x in name_list:
-        right = pygame.image.load(f"player/plate/walk/d/{x}")
-        walk_cycle_right.append(right)
-        i = i + 1    
-    return walk_cycle_right
-
-def get_plate_walk_left():
-    name_list = os.listdir('player/plate/walk/q')
-    i = 1
-    walk_cycle_left = []
-    for x in name_list:
-        left = pygame.image.load(f"player/plate/walk/q/{x}")
-        walk_cycle_left.append(left)
-        i = i + 1    
-    return walk_cycle_left
-
-def get_plate_walk_up():
-    name_list = os.listdir('player/plate/walk/z')
-    i = 1
-    walk_cycle_up = []
-    for x in name_list:
-        up = pygame.image.load(f"player/plate/walk/z/{x}")
-        walk_cycle_up.append(up)
-        i = i + 1    
-    return walk_cycle_up
-
-def get_plate_walk_down():
-    name_list = os.listdir('player/plate/walk/s')
-    i = 1
-    walk_cycle_down = []
-    for x in name_list:
-        down = pygame.image.load(f"player/plate/walk/s/{x}")
-        walk_cycle_down.append(down)
-        i = i + 1    
-    return walk_cycle_down
-
+#convert the matrix into object
+def map_convertor(matrix, game):
+    object_map = []
+    mob_map = []
+    row_index = 0
+    value_index = 0
+    #Image asset resized 
+    BushImg = pygame.image.load("overworld/bush.png")
+    BushImg = pygame.transform.scale(BushImg, (55, 55))
+    StoneWallImg = pygame.image.load("overworld/wall.png")
+    StoneWallImg = pygame.transform.scale(StoneWallImg, (55, 55))
+    FireCampImg = pygame.image.load("overworld/firecamp.png")
+    FireCampImg = pygame.transform.scale(FireCampImg, (55, 55))
+    DoorImg = pygame.image.load("overworld/door.png")
+    DoorImg = pygame.transform.scale(DoorImg, (55, 55))
+    for row in matrix:
+        value_index = 0
+        for value in row:
+            if value == -1:
+                object_map.append(Wall(value_index*55, row_index*55, BushImg))
+            if value == -2:
+                object_map.append(Wall(value_index*55, row_index*55, StoneWallImg))
+            if value == 1:
+                object_map.append(Wall(value_index*55, row_index*55, FireCampImg))
+            if value == 2:
+                object_map.append(Background(value_index*55, row_index*55, DoorImg))
+            if value == 22:
+                mob_map.append(Mob(value_index*55, row_index*55, 3, game))
+            if value == 55:
+                mob_map.append(Boss(value_index*55, row_index*55, 50, game))
+            if value == 0:
+                player_starting_position[0] = Player(value_index*55, row_index*55,"UP",False,False,False,False,False)
+            value_index = value_index + 1
+        row_index = row_index + 1
+    return object_map, mob_map
+    
 ###############################################################################
             
 def menu():
@@ -182,33 +258,26 @@ def menu():
     menu.add_button('Quit', pygame_menu.events.EXIT)
     menu.mainloop(gameDisplay)
   
-    
+#used to get value data from a menu
 def get_data(menu, value):
     data = menu.get_input_data()
     return data[value]
-        
-#Select map to play    
-def set_map(value):
-    global current_map
-    current_map = []
-    global current_level
-    current_level = value[0]
-    filename = f"map/{value[0]}.csv"
-    matrix = decode_csv(filename)
-    for line in matrix:
-        current_map.append(line)
-        
-#used as default value to prevent crash if the user tap "Play" without using the map selection
-def first_map(level_list):
-    global current_map
-    current_map = []
-    global current_level
-    current_level = level_list[0][0]
-    filename = f"map/{level_list[0][0]}.csv"
-    matrix = decode_csv(filename)
-    for line in matrix:
-        current_map.append(line)
 
+def custom_game(menu):
+    set_map(get_data(menu, "map"))
+    LoadedWorld()
+    GameMain().main_loop()
+        
+def new_game(menu):
+    create_new_user(menu)
+    global current_username
+    current_username = get_data(menu, "username")
+    first_map(level_list)
+    LoadedWorld()
+    GameMain().main_loop()
+    
+###############################################################################
+        
 #Class used for the walls
 class Wall(pygame.sprite.Sprite):
     
@@ -237,102 +306,8 @@ class World(object):
         self.wall_list = pygame.sprite.Group()
         self.mobs_list = pygame.sprite.Group()
         self.arrows = pygame.sprite.Group()
-        
-def custom_game(menu):
-    set_map(get_data(menu, "map"))
-    LoadedWorld()
-    GameMain().main_loop()
-        
-def new_game(menu):
-
-    create_new_user(menu)
-    global current_username
-    current_username = get_data(menu, "username")
-    first_map(level_list)
-    LoadedWorld()
-    GameMain().main_loop()
-    
-def create_new_user(newgame_menu):
-    name = get_data(newgame_menu, "username")
-    data = {}
-    data['player'] = []
-    data['player'].append({
-    'username': name,
-    'current_level': level_list[0][0]
-    })
-    with open(f'save/{name}.json', 'w+') as f:
-        json.dump(data, f)
-    
-def load_game(menu):
-    get_save_list()
-    global current_username
-    current_username = get_data(menu, "save")[0]
-    user = decode_save(current_username)
-    #set_map need a slice, so we create one
-    user_map = (user[0]["current_level"],0)
-    set_map(user_map)
-    LoadedWorld()
-    GameMain().main_loop()
-    
-def next_level():
-    user = decode_save(current_username)
-    user_map = (user[0]["current_level"],0)
-    next_map = flat_list.index(user_map[0])
-    next_map = next_map + 1
-    next_map2 = (flat_list[next_map],0)
-    set_map(next_map2)
-    update_user_next_level(flat_list[next_map])
-    LoadedWorld()
-    GameMain().main_loop()
-    
-def update_user_next_level(level):
-    data = {}
-    data['player'] = []
-    data['player'].append({
-    'username': current_username,
-    'current_level': level
-    })
-    with open(f'save/{current_username}.json', 'w+') as f:
-        json.dump(data, f)
-
-def map_convertor(matrix, game):
-    object_map = []
-    mob_map = []
-    row_index = 0
-    value_index = 0
-    #Image asset resized 
-    BushImg = pygame.image.load("overworld/bush.png")
-    BushImg = pygame.transform.scale(BushImg, (55, 55))
-    StoneWallImg = pygame.image.load("overworld/wall.png")
-    StoneWallImg = pygame.transform.scale(StoneWallImg, (55, 55))
-    FireCampImg = pygame.image.load("overworld/firecamp.png")
-    FireCampImg = pygame.transform.scale(FireCampImg, (55, 55))
-    DoorImg = pygame.image.load("overworld/door.png")
-    DoorImg = pygame.transform.scale(DoorImg, (55, 55))
-    
-    for row in matrix:
-        value_index = 0
-        for value in row:
-            if value == -1:
-                object_map.append(Wall(value_index*55, row_index*55, BushImg))
-            if value == -2:
-                object_map.append(Wall(value_index*55, row_index*55, StoneWallImg))
-            if value == 1:
-                object_map.append(Wall(value_index*55, row_index*55, FireCampImg))
-            if value == 2:
-                object_map.append(Background(value_index*55, row_index*55, DoorImg))
-            if value == 22:
-                mob_map.append(Mob(value_index*55, row_index*55, 3, game))
-            if value == 55:
-                mob_map.append(Boss(value_index*55, row_index*55, 50, game))
-            if value == 0:
-                player_starting_position[0] = Player(value_index*55, row_index*55,"UP",False,False,False,False,False)
-            value_index = value_index + 1
-        row_index = row_index + 1
-    return object_map, mob_map
-        
+                    
 class LoadedWorld(World):
-    
     def __init__(self):
         World.__init__(self)
         walls, mobs = map_convertor(current_map, self)        
@@ -608,7 +583,8 @@ class Player(pygame.sprite.Sprite):
         self.ticker += 1
         if self.ticker % 8 == 0:
             self.current_frame = (self.current_frame + 1) % 2
-            
+
+#class used to define the mob attribute          
 class Mob(pygame.sprite.Sprite):
     def __init__(self,x,y,hitpoint, game):
         self.left1 = pygame.image.load("mob/skell/q/1.png")
@@ -727,7 +703,8 @@ class Mob(pygame.sprite.Sprite):
         self.anim_ticker += 1
         if self.anim_ticker % 10 == 0:
             self.walk_anim_frame = (self.walk_anim_frame + 1) % 2
-            
+ 
+#class used to define the mob projectile                   
 class MobProjectile(pygame.sprite.Sprite):
     def __init__(self,x,y,direction):
         pygame.sprite.Sprite.__init__(self)
@@ -757,7 +734,8 @@ class MobProjectile(pygame.sprite.Sprite):
             self.rect.y -= 6
         elif self.direction == "down":
             self.rect.y += 6
-        
+
+#class used to define the boss attribute        
 class Boss(pygame.sprite.Sprite):
     def __init__(self,x,y,hitpoint, game):
         self.left1 = pygame.image.load("mob/boss/q/1.png")
@@ -884,11 +862,59 @@ class Boss(pygame.sprite.Sprite):
         self.anim_ticker += 1
         if self.anim_ticker % 10 == 0:
             self.walk_anim_frame = (self.walk_anim_frame + 1) % 2
-        
+   
+###############################################################################
+'''
+Player Animation Walkcycle
+'''
+    
+def get_plate_walk_right():
+    name_list = os.listdir('player/plate/walk/d')
+    i = 1
+    walk_cycle_right = []
+    for x in name_list:
+        right = pygame.image.load(f"player/plate/walk/d/{x}")
+        walk_cycle_right.append(right)
+        i = i + 1    
+    return walk_cycle_right
+
+def get_plate_walk_left():
+    name_list = os.listdir('player/plate/walk/q')
+    i = 1
+    walk_cycle_left = []
+    for x in name_list:
+        left = pygame.image.load(f"player/plate/walk/q/{x}")
+        walk_cycle_left.append(left)
+        i = i + 1    
+    return walk_cycle_left
+
+def get_plate_walk_up():
+    name_list = os.listdir('player/plate/walk/z')
+    i = 1
+    walk_cycle_up = []
+    for x in name_list:
+        up = pygame.image.load(f"player/plate/walk/z/{x}")
+        walk_cycle_up.append(up)
+        i = i + 1    
+    return walk_cycle_up
+
+def get_plate_walk_down():
+    name_list = os.listdir('player/plate/walk/s')
+    i = 1
+    walk_cycle_down = []
+    for x in name_list:
+        down = pygame.image.load(f"player/plate/walk/s/{x}")
+        walk_cycle_down.append(down)
+        i = i + 1    
+    return walk_cycle_down
+
+###############################################################################
+     
 def program_logic():
     pygame.init()
     menu()
-    
+  
+#flatten the level list, used
 def flattened_list(mylist):
     flat_list = []
     for sublist in mylist:
