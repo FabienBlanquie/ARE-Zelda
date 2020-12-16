@@ -12,40 +12,30 @@ import os
 import json
 import random
 
-#contain the list of all users saves
-save_list = []
-#contain user data
-data_list = []
-#contain current map matrix
-current_map = []
-#contain current level name
-current_level = ""
-#contain current username
-current_username = "John Doe"
-#initial valu of the player starting position
-player_starting_position = [[0,0]]
 
 ###############################################################################
 '''
 Settings part
 '''
 
+#define settings object
 class SettingsObject:
       def __init__(self, width, height):
           self.width = width
           self.height = height
           
+#decode json settings in misc folder
 def decode_settings():
     with open("misc/settings.json", "r") as read_file:
         settings_data = json.load(read_file)
         return settings_data
-          
+
+#combine the above to return the settings object
 def settings_logic():
     settings_data = decode_settings()
     settings = SettingsObject(settings_data["width"],settings_data["height"])
     return settings
 
- 
 ###############################################################################
 '''
 Score part
@@ -68,12 +58,14 @@ def get_data_list():
 '''
 User part
 '''
-    
+
+#decode usersave json, use the user name in parameter 
 def decode_save(name):
     with open(f"save/{name}.json", "r") as read_file:
         save_data = json.load(read_file)
         return save_data["player"]
-    
+
+#return an updated list of all the user save    
 def get_save_list():
     global save_list
     name_list = os.listdir('save')
@@ -85,6 +77,7 @@ def get_save_list():
     save_list.sort()
     return save_list
 
+#create a new user json, by using the menu data in parameter.
 def create_new_user(newgame_menu):
     name = get_data(newgame_menu, "username")
     data = {}
@@ -95,7 +88,8 @@ def create_new_user(newgame_menu):
     })
     with open(f'save/{name}.json', 'w+') as f:
         json.dump(data, f)
-        
+
+#update(rewrite) the current user with the level name in parameter      
 def update_user_next_level(level):
     data = {}
     data['player'] = []
@@ -111,7 +105,7 @@ def update_user_next_level(level):
 Level part
 '''
 
-#Decode the csv file
+#Decode the csv file containing the map matrix
 def decode_csv(fileName):
     initial_matrix = []
     with open(fileName, "r") as file:
@@ -122,6 +116,7 @@ def decode_csv(fileName):
     file.close
     return initial_matrix
 
+#return a list of levels from the map folder
 def get_level_list():
     name_list = os.listdir('map')
     level_list = []
@@ -132,7 +127,15 @@ def get_level_list():
     level_list.sort()
     return level_list
 
-#Select map to play    
+#used to unnest the level list
+def flattened_list(mylist):
+    flat_list = []
+    for sublist in mylist:
+        for item in sublist:
+            flat_list.append(item)
+    return flat_list
+
+#Select the map to play, update global current_map with the new matrix
 def set_map(value):
     global current_map
     current_map = []
@@ -143,7 +146,7 @@ def set_map(value):
     for line in matrix:
         current_map.append(line)
         
-#used as default value to prevent crash if the user tap "Play" without using the map selection
+#used  as default value to prevent crash if the user tap "Play" without using the custom map selection
 def first_map(level_list):
     global current_map
     current_map = []
@@ -153,7 +156,8 @@ def first_map(level_list):
     matrix = decode_csv(filename)
     for line in matrix:
         current_map.append(line)
-        
+
+#load the next file by retreving the current index position from flat_list, and incrementing. 
 def next_level():
     user = decode_save(current_username)
     user_map = (user[0]["current_level"],0)
@@ -165,9 +169,11 @@ def next_level():
     LoadedWorld()
     GameMain().main_loop()
     
-#convert the matrix into object
+#convert the matrix into the differents object in the game
 def map_convertor(matrix, game):
+    #contains the differents objects founds in the map
     object_map = []
+    #contains the differents hostiles founds in the map
     mob_map = []
     row_index = 0
     value_index = 0
@@ -183,18 +189,25 @@ def map_convertor(matrix, game):
     for row in matrix:
         value_index = 0
         for value in row:
+            #Wall with a Bush skin
             if value == -1:
                 object_map.append(Wall(value_index*55, row_index*55, BushImg))
+            #Wall with a Stone wall skin
             if value == -2:
                 object_map.append(Wall(value_index*55, row_index*55, StoneWallImg))
+            #Wall with a firecamp skin
             if value == 1:
                 object_map.append(Wall(value_index*55, row_index*55, FireCampImg))
+            #wall with a door skin
             if value == 2:
                 object_map.append(Wall(value_index*55, row_index*55, DoorImg))
+            #Add a Skeleton mob (hostile)
             if value == 22:
                 mob_map.append(Mob(value_index*55, row_index*55, 3, game))
+            #add a Boss (hostile)
             if value == 55:
                 mob_map.append(Boss(value_index*55, row_index*55, 50, game))
+            #define player position
             if value == 0:
                 player_starting_position[0] = Player(value_index*55, row_index*55,"UP",False,False,False,False,False)
             value_index = value_index + 1
@@ -202,6 +215,9 @@ def map_convertor(matrix, game):
     return object_map, mob_map
     
 ###############################################################################
+'''
+Menu part
+'''
             
 def menu():
     '''
@@ -214,6 +230,7 @@ def menu():
         username = data[0]["username"]
         level = data[0]["current_level"]
         score_menu.add_label(f"{username} Level : {level}")
+    score_menu.add_label("")
     score_menu.add_button('Back', pygame_menu.events.BACK)
     
     #settings submenu
@@ -225,24 +242,28 @@ def menu():
     settings_menu.add_label("q : left")
     settings_menu.add_label("d : right")
     settings_menu.add_label("spacebar : attack")
+    settings_menu.add_label("")
     settings_menu.add_button('Back', pygame_menu.events.BACK)
     
     #custom submenu
     custom_menu = pygame_menu.Menu(settings.height, settings.width, 'Settings', theme=pygame_menu.themes.THEME_DARK)
     custom_menu.add_selector('Level Selection :', level_list, selector_id = "map")
     custom_menu.add_button('Play', custom_game, custom_menu)
+    custom_menu.add_label("")
     custom_menu.add_button('Back', pygame_menu.events.BACK)
 
     #new game submenu
     newgame_menu = pygame_menu.Menu(settings.height, settings.width, 'Settings', theme=pygame_menu.themes.THEME_DARK)
     newgame_menu.add_text_input('Name :', default='John Doe', textinput_id = "username" )
     newgame_menu.add_button('Play', new_game, newgame_menu)
+    newgame_menu.add_label("")
     newgame_menu.add_button('Back', pygame_menu.events.BACK)
 
     #load game submenu
     loadgame_menu = pygame_menu.Menu(settings.height, settings.width, 'Load game', theme=pygame_menu.themes.THEME_DARK)
     loadgame_menu.add_selector('User Selection :', save_list, selector_id = "save")
     loadgame_menu.add_button('Play', load_game, loadgame_menu)
+    loadgame_menu.add_label("")
     loadgame_menu.add_button('Back', pygame_menu.events.BACK)
     
     #main menu
@@ -259,7 +280,8 @@ def menu():
 def get_data(menu, value):
     data = menu.get_input_data()
     return data[value]
-        
+
+#if we choose new game,we update current_username, create a new user, load the first map and start to play        
 def new_game(menu):
     create_new_user(menu)
     global current_username
@@ -267,7 +289,8 @@ def new_game(menu):
     first_map(level_list)
     LoadedWorld()
     GameMain().main_loop()
-          
+  
+#if we choose to load a game, we update current_username, decode the associated name and load the associated map to play
 def load_game(menu):
     global current_username
     current_username = get_data(menu, "save")[0]
@@ -277,14 +300,17 @@ def load_game(menu):
     set_map(user_map)
     LoadedWorld()
     GameMain().main_loop()
-    
+
+#free map selection    
 def custom_game(menu):
     set_map(get_data(menu, "map"))
     LoadedWorld()
     GameMain().main_loop()
     
 ###############################################################################
-        
+'''
+Objects used for the game
+'''
 #Class used for the walls
 class Wall(pygame.sprite.Sprite):
     
@@ -294,14 +320,16 @@ class Wall(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
-         
+
+#class used for the world list         
 class World(object):
     wall_list = None
     def __init__(self):
         self.wall_list = pygame.sprite.Group()
         self.mobs_list = pygame.sprite.Group()
         self.projectiles = pygame.sprite.Group()
-                    
+
+#used to load the world with the list and map convertor                    
 class LoadedWorld(World):
     def __init__(self):
         World.__init__(self)
@@ -311,7 +339,8 @@ class LoadedWorld(World):
         for mob in mobs:
             mob.walls = self.wall_list
             self.mobs_list.add(mob)
-            
+
+#main class for the game           
 class GameMain():
     done = False
     def __init__(self):
@@ -325,6 +354,7 @@ class GameMain():
         self.clock = pygame.time.Clock()
         self.current_x = 0
         self.current_y = 0
+        #load world
         self.rooms = [[LoadedWorld()]]
         self.current_room = self.rooms[self.current_y][self.current_x]
         self.player.walls = self.rooms[self.current_y][self.current_x].wall_list
@@ -350,7 +380,8 @@ class GameMain():
                         self.player.kill()
                     elif pygame.sprite.spritecollideany(projectile,self.player.walls):
                         projectile.kill()
-            
+    
+    #draw the diffrents sprite on screen        
     def draw(self):
         self.screen.fill((self.color_red, self.color_green, self.color_blue))
         self.all_sprite_list.draw(self.screen)
@@ -536,6 +567,7 @@ class Player(pygame.sprite.Sprite):
         self.RIGHT, self.LEFT, self.UP, self.DOWN = "right left up down".split()
         self.action = 'walking'
     
+#handle player direction and input
     def update(self):
         if self.downKeyPressed:
             self.rect.y += 5
@@ -621,7 +653,8 @@ class Mob(pygame.sprite.Sprite):
         self.x_change = 1
         self.y_change = 1
         self.anim_ticker = 0
-        
+    
+    #handle direction and action    
     def update(self):
         if self.direction == "right":
             self.image = self.right_walk[self.walk_anim_frame]
@@ -891,23 +924,35 @@ def get_plate_walk_down():
     return walk_cycle_down
 
 ###############################################################################
-     
+'''
+Program logic and global var
+'''
 def program_logic():
     pygame.init()
     menu()
-  
-#flatten the level list, used
-def flattened_list(mylist):
-    flat_list = []
-    for sublist in mylist:
-        for item in sublist:
-            flat_list.append(item)
-    return flat_list
     
+#contain the list of all users saves
+save_list = []
+#contain user data
+data_list = []
+#contain current map matrix
+current_map = []
+#contain current level name
+current_level = ""
+#contain current username, with a default value to prevent crash
+current_username = "John Doe"
+#initial valu of the player starting position, with a default value to prevent crash
+player_starting_position = [[0,0]]
+   
+#global level_list, contains levels name
 level_list = get_level_list()
+#level list un-nested
 flat_list = flattened_list(level_list)
+#load save for the menu
 get_save_list()
+#get data to display on the score menu
 get_data_list()
+#get inititals settings for the windows
 settings = settings_logic()
 gameDisplay = pygame.display.set_mode((settings.width, settings.height)) 
 program_logic()
