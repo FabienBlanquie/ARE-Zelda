@@ -532,7 +532,7 @@ class Player(pygame.sprite.Sprite):
         self.leftKeyPressed = leftKeyPressed
         self.rightKeyPressed = rightKeyPressed
         self.spacePressed = spacePressed
-        self.WALKRATE = 5
+        self.WALKRATE = 9
         self.RIGHT, self.LEFT, self.UP, self.DOWN = "right left up down".split()
         self.action = 'walking'
     
