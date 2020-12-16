@@ -12,6 +12,7 @@ import os
 import json
 import random
 
+save_list = []
 current_map = []
 current_level = ""
 current_username = ""
@@ -73,6 +74,7 @@ def get_level_list():
     return level_list
 
 def get_save_list():
+    global save_list
     name_list = os.listdir('save')
     save_list = []
     for x in name_list:
@@ -152,11 +154,12 @@ def menu():
     #new game submenu
     newgame_menu = pygame_menu.Menu(settings.height, settings.width, 'Settings', theme=pygame_menu.themes.THEME_DARK)
     newgame_menu.add_text_input('Name :', default='John Doe', textinput_id = "username" )
+    newgame_menu.add_button('reset', pygame_menu.events.RESET)
     newgame_menu.add_button('Play', new_game, newgame_menu)
     newgame_menu.add_button('Back', pygame_menu.events.BACK)
 
     #load game submenu
-    loadgame_menu = pygame_menu.Menu(settings.height, settings.width, 'Settings', theme=pygame_menu.themes.THEME_DARK)
+    loadgame_menu = pygame_menu.Menu(settings.height, settings.width, 'Load game', theme=pygame_menu.themes.THEME_DARK)
     loadgame_menu.add_selector('User Selection :', save_list, selector_id = "save")
     loadgame_menu.add_button('Play', load_game, loadgame_menu)
     loadgame_menu.add_button('Back', pygame_menu.events.BACK)
@@ -166,7 +169,7 @@ def menu():
     menu.add_button('New Game', newgame_menu)
     menu.add_button('Load Game', loadgame_menu)
     #menu.add_button('Custom Game', custom_menu)
-    menu.add_button('High Score', score_menu)
+    #menu.add_button('High Score', score_menu)
     menu.add_button('Settings', settings_menu)
     menu.add_button('Quit', pygame_menu.events.EXIT)
     menu.mainloop(gameDisplay)
@@ -236,6 +239,7 @@ def custom_game(menu):
     GameMain().main_loop()
         
 def new_game(menu):
+
     create_new_user(menu)
     global current_username
     current_username = get_data(menu, "username")
@@ -255,6 +259,7 @@ def create_new_user(newgame_menu):
         json.dump(data, f)
     
 def load_game(menu):
+    get_save_list()
     global current_username
     current_username = get_data(menu, "save")[0]
     user = decode_save(current_username)
@@ -378,7 +383,7 @@ class GameMain():
         #if we have killed all the monster and reached the last level, return to the main screen
         if not self.current_room.mobs_list and (flat_list.index(current_level) == (len(flat_list)-1)):
             self.done = True
-                  
+                          
     def handle_events(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -388,6 +393,8 @@ class GameMain():
             elif event.type == pygame.KEYDOWN and self.player.can_move == True:
                 if event.key == pygame.K_ESCAPE:
                     self.done = True
+                    get_save_list()
+                    menu()
                 elif event.key == pygame.K_z:
                     self.player.upKeyPressed = True
                     self.player.downKeyPressed = False
@@ -877,7 +884,8 @@ def flattened_list(mylist):
 score_data = decode_score()
 level_list = get_level_list()
 flat_list = flattened_list(level_list)
-save_list = get_save_list()
+get_save_list()
+#save_list = get_save_list()
 settings = settings_logic()
 gameDisplay = pygame.display.set_mode((settings.width, settings.height)) 
 program_logic()
