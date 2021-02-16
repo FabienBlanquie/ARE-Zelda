@@ -1,13 +1,11 @@
-Installer pygame-menu avec la commande suivante :
+Souls:
 
-    $> pip install pygame-menu
-    
-Tester de préférence la carte "Village"
+objective : Kill all ennemies to progress to the next level.
 
-les commandes sont :
-Z : Haut,
-S : Bas, 
-Q : Gauche,
-D: Droite,
-ESPACE : Attaque,
-ECHAP : Retour menu
+input are :
+Z : up,
+S : down, 
+Q : left,
+D: right,
+ESPACE : attack,
+ECHAP : return menu
